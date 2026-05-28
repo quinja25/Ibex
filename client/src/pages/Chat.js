@@ -10,9 +10,9 @@ import './Chat.css';
 export const Chat = () => {
     const [groups, setGroups] = useState([]);
     const [selectedGroup, setSelectedGroup] = useState(null);
-    const [userData, setUserData] = useState({});
+    const [_userData, setUserData] = useState({});
     const [messages, setMessages] = useState([]);
-    const [myId, setMyId] = useState(null);
+    const [_myId, setMyId] = useState(null);
     const [dmPartnerNames, setDmPartnerNames] = useState({}); // groupId -> partner display name
     const socketRef = useRef(null);
     const location = useLocation();

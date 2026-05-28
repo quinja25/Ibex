@@ -26,6 +26,7 @@ export const Schedule = () => {
         if (token) {
             fetchEvents();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [token]);
 
     const fetchEvents = async () => {

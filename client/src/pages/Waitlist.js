@@ -582,14 +582,13 @@ export const Waitlist = () => {
                     <p className="wl-cta-sub">
                         Join {count > 0 ? count.toLocaleString() : 'hundreds of'} students already on the list.
                     </p>
-                    <a
-                        href="#"
+                    <button
                         className="wl-btn-primary wl-btn-xl"
-                        onClick={e => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
                         aria-label="Scroll to top to join the waitlist"
                     >
                         Get early access
-                    </a>
+                    </button>
                 </div>
             </section>
 
