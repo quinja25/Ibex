@@ -1,6 +1,6 @@
 import { rest } from 'msw';
 
-const BASE = 'http://localhost';
+const BASE = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
 export const handlers = [
     rest.get(`${BASE}/public/waitlist/count`, (req, res, ctx) =>

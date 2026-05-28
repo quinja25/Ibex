@@ -327,12 +327,13 @@ export const Waitlist = () => {
             setHasUrlRef(true);
         }
 
-        fetch('/public/waitlist/count')
+        const apiBase = process.env.REACT_APP_API_URL || '';
+        fetch(`${apiBase}/public/waitlist/count`)
             .then(r => r.json())
             .then(d => setCount(d.count || 0))
             .catch(() => {});
 
-        fetch('/public/waitlist/countries')
+        fetch(`${apiBase}/public/waitlist/countries`)
             .then(r => r.json())
             .then(d => setCountries(d.countries || []))
             .catch(() => {});
@@ -344,7 +345,8 @@ export const Waitlist = () => {
         setStatus('loading');
         setErrorMsg('');
         try {
-            const res = await fetch('/public/waitlist', {
+            const apiBase = process.env.REACT_APP_API_URL || '';
+            const res = await fetch(`${apiBase}/public/waitlist`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email: email.trim(), name: name.trim(), country: country.trim(), role, referredBy: referredBy || undefined }),
@@ -363,8 +365,8 @@ export const Waitlist = () => {
                 window.gtag?.('event', 'waitlist_signup', { referred_by: referredBy || null, position: data.count });
             }
             setStatus(data.alreadyRegistered ? 'duplicate' : 'success');
-            if (data.referralCode && !data.alreadyRegistered) {
-                fetch(`/public/waitlist/ref/${data.referralCode}`)
+            if (data.referralCode) {
+                fetch(`${apiBase}/public/waitlist/ref/${data.referralCode}`)
                     .then(r => r.json())
                     .then(d => setRefStats({ referralCount: d.referralCount || 0, waitlistCredits: d.waitlistCredits || 0 }))
                     .catch(() => {});
@@ -519,11 +521,11 @@ export const Waitlist = () => {
                                             </div>
                                             <div className={`wl-referral-milestone${refStats.referralCount >= 3 ? ' wl-referral-milestone--done' : ''}`}>
                                                 <span className="wl-milestone-check">{refStats.referralCount >= 3 ? '✓' : '○'}</span>
-                                                <span>3 friends → 75 credits + skip the queue</span>
+                                                <span>3 friends → 75 credits + priority access</span>
                                             </div>
                                             <div className={`wl-referral-milestone${refStats.referralCount >= 5 ? ' wl-referral-milestone--done' : ''}`}>
                                                 <span className="wl-milestone-check">{refStats.referralCount >= 5 ? '✓' : '○'}</span>
-                                                <span>5 friends → 1 month Pro free</span>
+                                                <span>5 friends → 125 credits + 1 month Pro at launch</span>
                                             </div>
                                         </div>
 
@@ -592,11 +594,11 @@ export const Waitlist = () => {
                                             </div>
                                             <div className={`wl-referral-milestone${refStats.referralCount >= 3 ? ' wl-referral-milestone--done' : ''}`}>
                                                 <span className="wl-milestone-check">{refStats.referralCount >= 3 ? '✓' : '○'}</span>
-                                                <span>3 friends → 75 credits + skip the queue</span>
+                                                <span>3 friends → 75 credits + priority access</span>
                                             </div>
                                             <div className={`wl-referral-milestone${refStats.referralCount >= 5 ? ' wl-referral-milestone--done' : ''}`}>
                                                 <span className="wl-milestone-check">{refStats.referralCount >= 5 ? '✓' : '○'}</span>
-                                                <span>5 friends → 1 month Pro free</span>
+                                                <span>5 friends → 125 credits + 1 month Pro at launch</span>
                                             </div>
                                         </div>
 

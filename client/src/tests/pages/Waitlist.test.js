@@ -196,7 +196,7 @@ describe('Waitlist page — form submission', () => {
 
     test('server error shows error message', async () => {
         server.use(
-            rest.post('http://localhost/public/waitlist', (req, res, ctx) =>
+            rest.post(`${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/public/waitlist`, (req, res, ctx) =>
                 res(ctx.status(500), ctx.json({ error: 'Failed to join waitlist. Please try again.' }))
             )
         );

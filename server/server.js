@@ -17,7 +17,7 @@ const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:3000";
 // dev server on the wrong port doesn't silently break auth via CORS.
 const allowedOrigins = process.env.NODE_ENV === 'production'
     ? [CLIENT_URL]
-    : [CLIENT_URL, 'http://localhost:3000', 'http://localhost:3002', 'http://localhost:3001'];
+    : [CLIENT_URL, 'http://localhost', 'http://localhost:3000', 'http://localhost:3002', 'http://localhost:3001'];
 
 app.use(helmet());
 app.use(cors({
