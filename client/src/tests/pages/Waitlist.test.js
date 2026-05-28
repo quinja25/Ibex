@@ -260,7 +260,7 @@ describe('Waitlist page — hamburger nav', () => {
         fireEvent.click(screen.getByRole('button', { name: /open menu/i }));
         const mobileNav = screen.getByRole('navigation', { name: /mobile menu/i });
         expect(mobileNav).toHaveTextContent('Features');
-        expect(mobileNav).toHaveTextContent('Try the AI');
+        expect(mobileNav).toHaveTextContent('Ask Ibex');
         expect(mobileNav).toHaveTextContent('FAQ');
     });
 
@@ -308,7 +308,7 @@ describe('Waitlist page — FAQ accordion', () => {
         renderWaitlist();
         expect(screen.getByText('Is Ibex free?')).toBeInTheDocument();
         expect(screen.getByText('Which IB subjects does it cover?')).toBeInTheDocument();
-        expect(screen.getByText('How is Ibex different from ChatGPT?')).toBeInTheDocument();
+        expect(screen.getByText('How is Ibex different from other AIs?')).toBeInTheDocument();
         expect(screen.getByText('When does it launch?')).toBeInTheDocument();
     });
 
