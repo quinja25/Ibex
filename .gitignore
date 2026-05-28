@@ -1,0 +1,68 @@
+# ── Dependencies ──
+node_modules/
+.pnp
+.pnp.js
+
+# ── Environment ──
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# ── Client build ──
+client/build/
+client/coverage/
+
+# ── Server ──
+server/config/config.json
+
+# ── Logs ──
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ── Docs / markdown (keep only root README.md) ──
+*.md
+!README.md
+
+# ── Internal planning / AI tooling ──
+CLAUDE.md
+DESIGN.md
+PRODUCT.md
+ux-flows.md
+skills-lock.json
+.omc/
+
+# ── Env examples ──
+client/.env.example
+server/.env.example
+
+# ── Server internal scripts & eval data ──
+server/scripts/
+server/rag-compare-output.txt
+server/seed.js
+
+# ── Raw ingestion source data ──
+Past_Papers/
+_alumni/
+
+# ── One-off tooling ──
+fetch_file_paths.py
+file-paths.txt
+file-paths_files/
+
+# ── E2E tests ──
+e2e/
+
+# ── OS ──
+.DS_Store
+
+# ── OMC runtime (ephemeral) ──
+.omc/sessions/
+.omc/state/
+
+# Others
+.claude/
+.impeccable/
+.agents/skills/impeccable/scripts

@@ -1,0 +1,27 @@
+.timer-box {
+    margin-top: -3px;
+    margin-left: 15px;
+    height: 140px;
+}
+
+.timer-buttons {
+    display: flex;
+    flex-direction: row;
+    /* Stack buttons vertically */
+    gap: 20px;
+    /* Space between buttons */
+    margin-left: 30px;
+    margin-right: 70px;
+
+
+    /* Space between progress bar and buttons */
+}
+
+.timer-container {
+    display: flex;
+    align-items: center;
+    /* Align vertically */
+    justify-content: space-between;
+    /* Space between the progress bar and the buttons */
+
+}

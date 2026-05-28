@@ -1,0 +1,16 @@
+.play-button {
+    background-color: transparent;
+    color: black;
+    font-size: larger;
+    border: none;
+    display: inline-block;
+    width: 100%;
+}
+
+label {
+    display: block;
+}
+
+.play-button:hover {
+    color: rgb(97, 175, 183);
+}

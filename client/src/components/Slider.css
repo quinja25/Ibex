@@ -1,0 +1,45 @@
+.slider {
+    height: 20px;
+
+    background-color: #c43a31;
+    border: 2px solid black;
+
+    border-radius: 20px;
+}
+
+.thumb {
+    background-color: #434343;
+    cursor: pointer;
+    width: 20px;
+    height: 20px;
+    border-radius: 20px;
+}
+
+.slider-green {
+    height: 20px;
+    border-radius: 20px;
+    background-color: #35c458;
+    border: 2px solid black;
+}
+
+.thumb-green {
+    background-color: #434343;
+    cursor: pointer;
+    width: 20px;
+    height: 20px;
+    border-radius: 20px;
+
+}
+
+.slider-box {
+    width: 300px;
+    margin-left: 20px;
+
+}
+
+.slider-box label {
+    margin-left: 100px;
+    font-weight: 500;
+    margin-bottom: 3px;
+    margin-top: 3px;
+}

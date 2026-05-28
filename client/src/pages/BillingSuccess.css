@@ -1,0 +1,100 @@
+.bs-page {
+    min-height: 100vh;
+    background: #080e1a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Outfit', sans-serif;
+    padding: 2rem;
+}
+
+.bs-card {
+    background: #0f1824;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 24px;
+    padding: 3rem 2.5rem;
+    max-width: 440px;
+    width: 100%;
+    text-align: center;
+}
+
+.bs-check {
+    width: 72px;
+    height: 72px;
+    margin: 0 auto 24px;
+    opacity: 0;
+    transform: scale(0.6);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.bs-check--visible {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.bs-checkmark { width: 72px; height: 72px; }
+
+.bs-checkmark-circle {
+    stroke: #6c63ff;
+    stroke-width: 2;
+    stroke-dasharray: 160;
+    stroke-dashoffset: 160;
+    animation: bs-circle 0.5s ease forwards 0.1s;
+}
+
+.bs-checkmark-check {
+    stroke: #6c63ff;
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 48;
+    stroke-dashoffset: 48;
+    animation: bs-check 0.35s ease forwards 0.55s;
+}
+
+@keyframes bs-circle { to { stroke-dashoffset: 0; } }
+@keyframes bs-check  { to { stroke-dashoffset: 0; } }
+
+.bs-title { color: #e2e8f0; font-size: 1.8rem; font-weight: 800; margin: 0 0 8px; }
+.bs-sub { color: #94a3b8; font-size: 0.95rem; margin: 0 0 28px; line-height: 1.6; }
+
+.bs-features {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 32px;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.bs-feature {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.88rem;
+    color: #cbd5e1;
+}
+
+.bs-feature-check {
+    color: #6c63ff;
+    font-weight: 700;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+
+.bs-btn {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, #6c63ff, #a78bfa);
+    color: #fff;
+    font-size: 0.95rem;
+    font-weight: 700;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: opacity 0.15s;
+}
+
+.bs-btn:hover { opacity: 0.88; }
