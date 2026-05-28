@@ -8,7 +8,7 @@ import * as Yup from 'yup';
 import { useLocation } from 'react-router-dom';
 
 export const CreateGroup = () => {
-    const [_userData, setUserData] = useState({ name: '', email: '', picture: '' });
+    const [, setUserData] = useState({ name: '', email: '', picture: '' });
     const [userId, setUserId] = useState(null);
 
     let navigate = useNavigate();
