@@ -43,7 +43,7 @@ const sendWaitlistConfirmation = async (entry, position, clientUrl) => {
             <a href="${referralLink}" style="display:inline-block;margin:12px 0;padding:12px 24px;background:#6c63ff;color:#fff;border-radius:8px;text-decoration:none;font-weight:600">Share your referral link</a>
             <p style="font-size:13px;color:#888;word-break:break-all">Or copy: ${referralLink}</p>
             <hr style="border:none;border-top:1px solid #eee;margin:24px 0"/>
-            <p style="font-size:13px;color:#aaa">Ibex launches June 10, 2026. We'll email you when access opens.</p>
+            <p style="font-size:13px;color:#aaa">We'll email you as soon as your access is ready.</p>
         </div>
     `;
 

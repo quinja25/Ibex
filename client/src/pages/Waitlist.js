@@ -293,9 +293,6 @@ export const Waitlist = () => {
                         <a href="#try-ai">Try the AI</a>
                         <a href="#faq">FAQ</a>
                     </div>
-                    <div className="wl-nav-actions">
-                        <Link to="/login" className="wl-btn-ghost">Log in</Link>
-                    </div>
                 </div>
             </nav>
 
@@ -422,6 +419,19 @@ export const Waitlist = () => {
                                             <option value="other">Other</option>
                                         </select>
                                     </div>
+                                    {!referredBy && (
+                                        <input
+                                            className="wl-input"
+                                            type="text"
+                                            placeholder="Referral code (optional)"
+                                            value={referredBy}
+                                            onChange={e => setReferredBy(e.target.value.trim().toLowerCase())}
+                                            disabled={status === 'loading'}
+                                            aria-label="Referral code"
+                                            autoComplete="off"
+                                            maxLength={8}
+                                        />
+                                    )}
                                     {status === 'error' && (
                                         <p className="wl-form-error" role="alert">{errorMsg}</p>
                                     )}
@@ -433,9 +443,6 @@ export const Waitlist = () => {
                                         {status === 'loading' ? 'Joining…' : 'Join the waitlist'}
                                     </button>
                                 </form>
-                                <p className="wl-card-note">
-                                    Already have an account? <Link to="/login">Log in</Link>
-                                </p>
                             </>
                         )}
                     </div>
