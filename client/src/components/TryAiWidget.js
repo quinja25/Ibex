@@ -167,7 +167,7 @@ export const TryAiWidget = () => {
                             >
                                 {loading
                                     ? <><span className="try-ai-spinner" /> Searching past papers…</>
-                                    : 'Ask the IB AI →'
+                                    : 'Ask Ibex →'
                                 }
                             </button>
                         </div>

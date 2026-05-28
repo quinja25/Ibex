@@ -124,11 +124,12 @@
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     border-bottom: 1px solid var(--border);
+    padding: 0 24px;
 }
 .wl-nav-inner {
     max-width: 1400px;
     margin: 0 auto;
-    padding: 0 40px;
+    padding: 0;
     height: 72px;
     display: flex;
     align-items: center;
@@ -924,7 +925,7 @@
 
 /* ── Additional responsive rules ── */
 @media (max-width: 900px) {
-    .wl-nav-inner { padding: 0 20px; }
+    .wl-nav { padding: 0 20px; }
     .wl-nav-actions { display: none; }
     .wl-hero { padding: 100px 20px 60px; }
     .wl-hero-inner { gap: 40px; }
@@ -936,7 +937,7 @@
 }
 
 @media (max-width: 600px) {
-    .wl-nav-inner { padding: 0 16px; }
+    .wl-nav { padding: 0 16px; }
     .wl-hero { padding: 90px 16px 48px; min-height: unset; }
     .wl-hero-copy { gap: 16px; }
     .wl-card { padding: 24px 20px; }
