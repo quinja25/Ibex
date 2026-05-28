@@ -52,8 +52,12 @@ fetch_file_paths.py
 file-paths.txt
 file-paths_files/
 
-# ── E2E tests ──
+# ── Tests ──
 e2e/
+client/src/tests/
+client/src/mocks/
+client/src/__mocks__/
+client/src/setupTests.js
 
 # ── OS ──
 .DS_Store

@@ -49,6 +49,49 @@ const PRIMARY_FEATURES = [
     },
 ];
 
+const FAQ_ITEMS = [
+    {
+        q: 'Is Ibex free?',
+        a: 'Yes — the core platform is free. AI chat, community Q&A, study rooms, streaks, and the wiki are all included at no cost. A Pro tier will unlock unlimited AI queries, document uploads, and spaced repetition. Pricing will be confirmed at launch.',
+    },
+    {
+        q: 'Which IB subjects does it cover?',
+        a: 'All six IB subject groups: Studies in Language & Literature, Language Acquisition, Individuals & Societies, Sciences, Mathematics, and the Arts. Economics, Biology, Chemistry, Physics, and Maths are fully indexed at launch — more subjects are being added continuously.',
+    },
+    {
+        q: 'How is Ibex different from ChatGPT?',
+        a: 'ChatGPT is a general-purpose tool. Ibex is purpose-built for IB — it understands command terms, HL/SL distinctions, and mark scheme conventions. It can answer directly from your uploaded notes and cites the specific source for every answer.',
+    },
+    {
+        q: 'Can I use it for A-Level?',
+        a: 'The platform is designed primarily for IB Diploma students, but A-Level students studying overlapping subjects (Chemistry, Biology, Physics, Maths) will find most of the AI responses directly useful. A-Level-specific support is on the roadmap.',
+    },
+    {
+        q: 'Can I upload my own notes?',
+        a: 'Yes. You can upload PDFs — textbooks, teacher notes, past papers — and the AI will answer questions by drawing directly from your documents, with citations showing exactly which file and section it referenced.',
+    },
+    {
+        q: 'How do study rooms work?',
+        a: 'Study rooms are live video sessions with HD video, a collaborative whiteboard, and a shared Pomodoro timer. You can invite classmates via a link. Everyone in the room runs on the same focus timer, keeping the session on track.',
+    },
+    {
+        q: 'Do I need to sign up to try the AI?',
+        a: 'No. You can ask the AI up to 3 questions per day without creating an account — just use the "Try it now" section on this page. Creating a free account removes that limit and unlocks study rooms, Q&A, and document uploads.',
+    },
+    {
+        q: 'When does it launch?',
+        a: "We haven't locked in a public date yet. Waitlist members will be the first to know — you'll get an email when your access is ready, no need to keep checking.",
+    },
+    {
+        q: 'How do referral credits work?',
+        a: 'Every friend who joins the waitlist using your link earns you 25 credits. When they create an account at launch, you get an additional 100 XP — credited automatically to your profile.',
+    },
+    {
+        q: 'Is my data safe?',
+        a: 'Yes. Documents you upload are stored securely and only used to answer your own queries. We never share your data with third parties or use it to train external AI models.',
+    },
+];
+
 const SECONDARY_FEATURES = [
     {
         num: '04',
@@ -74,8 +117,10 @@ const useScrollReveal = () => {
         const observer = new IntersectionObserver(
             (entries) => entries.forEach(e => {
                 if (e.isIntersecting) {
-                    e.target.style.opacity = '1';
-                    e.target.style.transform = 'translateY(0)';
+                    const delay = parseInt(e.target.dataset.delay || '0', 10);
+                    setTimeout(() => {
+                        e.target.classList.add('wl-revealed');
+                    }, delay);
                     observer.unobserve(e.target);
                 }
             }),
@@ -203,6 +248,8 @@ function RoomMockup() {
 
 export const Waitlist = () => {
     useScrollReveal();
+    const [mobileNavOpen, setMobileNavOpen] = useState(false);
+    const [openFaq, setOpenFaq]     = useState(null);
     const [email, setEmail]         = useState('');
     const [name, setName]           = useState('');
     const [country, setCountry]     = useState('');
@@ -219,6 +266,39 @@ export const Waitlist = () => {
     const [emailError, setEmailError]     = useState('');
     const [nameError, setNameError]       = useState('');
     const [countryError, setCountryError] = useState('');
+
+    const DRAFT_KEY = 'ibex_waitlist_v1';
+
+    // Persist draft on every field change
+    useEffect(() => {
+        if (status !== 'idle' && status !== 'loading') return;
+        const draft = { name, email, country, role, referredBy };
+        const isEmpty = !name && !email && !country;
+        if (isEmpty) { localStorage.removeItem(DRAFT_KEY); return; }
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+    }, [name, email, country, role, referredBy, status]);
+
+    const [draftBanner, setDraftBanner] = useState(() => {
+        try {
+            const saved = localStorage.getItem(DRAFT_KEY);
+            return saved ? JSON.parse(saved) : null;
+        } catch { return null; }
+    });
+
+    const restoreDraft = () => {
+        if (!draftBanner) return;
+        setName(draftBanner.name || '');
+        setEmail(draftBanner.email || '');
+        setCountry(draftBanner.country || '');
+        setRole(draftBanner.role || 'student');
+        if (!hasUrlRef && draftBanner.referredBy) setReferredBy(draftBanner.referredBy);
+        setDraftBanner(null);
+    };
+
+    const dismissDraft = () => {
+        localStorage.removeItem(DRAFT_KEY);
+        setDraftBanner(null);
+    };
 
     const validateCountry = (val) => {
         if (!val.trim()) return 'Country is required.';
@@ -275,6 +355,8 @@ export const Waitlist = () => {
                 setStatus('error');
                 return;
             }
+            localStorage.removeItem(DRAFT_KEY);
+            setDraftBanner(null);
             setCount(data.count || count + 1);
             if (data.referralCode) {
                 setReferralCode(data.referralCode);
@@ -341,7 +423,24 @@ export const Waitlist = () => {
                         <a href="#try-ai">Try the AI</a>
                         <a href="#faq">FAQ</a>
                     </div>
+                    <button
+                        className={`wl-hamburger${mobileNavOpen ? ' wl-hamburger--open' : ''}`}
+                        onClick={() => setMobileNavOpen(o => !o)}
+                        aria-label={mobileNavOpen ? 'Close menu' : 'Open menu'}
+                        aria-expanded={mobileNavOpen}
+                    >
+                        <span />
+                        <span />
+                        <span />
+                    </button>
                 </div>
+                {mobileNavOpen && (
+                    <div className="wl-mobile-nav" role="navigation" aria-label="Mobile menu">
+                        <a href="#features" onClick={() => setMobileNavOpen(false)}>Features</a>
+                        <a href="#try-ai" onClick={() => setMobileNavOpen(false)}>Try the AI</a>
+                        <a href="#faq" onClick={() => setMobileNavOpen(false)}>FAQ</a>
+                    </div>
+                )}
             </nav>
 
             {/* ── Hero ── */}
@@ -351,24 +450,24 @@ export const Waitlist = () => {
 
                 <div className="wl-hero-inner">
                     <div className="wl-hero-copy">
-                        <div className="wl-badge wl-reveal">
+                        <div className="wl-badge wl-reveal" data-delay="0">
                             <span className="wl-badge-dot" aria-hidden="true" />
                             Coming soon · We'll email you when access opens
                         </div>
 
-                        <h1 id="hero-headline" className="wl-headline wl-reveal">
+                        <h1 id="hero-headline" className="wl-headline wl-reveal" data-delay="100">
                             The AI study platform<br />
                             <span className="wl-headline-accent">built for IB students.</span>
                         </h1>
 
-                        <p className="wl-sub wl-reveal">
+                        <p className="wl-sub wl-reveal" data-delay="220">
                             Upload your notes. Study with classmates. Ask the AI that actually
                             knows what command terms mean. Get mentored by alumni who passed
                             your exact exams.
                         </p>
 
                         {count > 0 && (
-                            <p className="wl-count-line wl-reveal">
+                            <p className="wl-count-line wl-reveal" data-delay="340">
                                 <span className="wl-count-arrow" aria-hidden="true">→</span>
                                 <strong><CountUp target={count} /></strong>
                                 <span>students already on the list</span>
@@ -377,7 +476,7 @@ export const Waitlist = () => {
                     </div>
 
                     {/* ── Signup card ── */}
-                    <div className="wl-card wl-reveal">
+                    <div className="wl-card wl-reveal" data-delay="180">
                         {status === 'success' ? (
                             <div className="wl-success" role="status">
                                 <div className="wl-success-mark" aria-hidden="true">✓</div>
@@ -431,6 +530,15 @@ export const Waitlist = () => {
                             </div>
                         ) : (
                             <>
+                                {draftBanner && (
+                                    <div className="wl-draft-banner" role="status">
+                                        <p>Continue where you left off?</p>
+                                        <div className="wl-draft-banner-actions">
+                                            <button className="wl-draft-restore" onClick={restoreDraft}>Restore</button>
+                                            <button className="wl-draft-dismiss" onClick={dismissDraft}>Dismiss</button>
+                                        </div>
+                                    </div>
+                                )}
                                 <div className="wl-card-header">
                                     <h2>Get early access</h2>
                                     <p>Be first when we open. No spam, ever.</p>
@@ -570,7 +678,7 @@ export const Waitlist = () => {
                         {PRIMARY_FEATURES.map((f, i) => (
                             <div
                                 key={f.num}
-                                className={`wl-feature-row wl-reveal${i % 2 === 1 ? ' wl-feature-row--flip' : ''}`}
+                                className={`wl-feature-row wl-reveal${i % 2 === 1 ? ' wl-feature-row--flip wl-reveal--from-right' : ' wl-reveal--from-left'}`}
                                 style={{ transitionDelay: `${i * 60}ms` }}
                             >
                                 <div className="wl-feature-row-text">
@@ -615,53 +723,32 @@ export const Waitlist = () => {
                     <span className="wl-section-tag">FAQ</span>
                     <h2 id="faq-title" className="wl-section-title">Common questions.</h2>
                     <div className="wl-faq-grid">
-                        {[
-                            {
-                                q: 'Is Ibex free?',
-                                a: 'Yes — the core platform is free. AI chat, community Q&A, study rooms, streaks, and the wiki are all included at no cost. A Pro tier will unlock unlimited AI queries, document uploads, and spaced repetition. Pricing will be confirmed at launch.',
-                            },
-                            {
-                                q: 'Which IB subjects does it cover?',
-                                a: 'All six IB subject groups: Studies in Language & Literature, Language Acquisition, Individuals & Societies, Sciences, Mathematics, and the Arts. Economics, Biology, Chemistry, Physics, and Maths are fully indexed at launch — more subjects are being added continuously.',
-                            },
-                            {
-                                q: 'How is Ibex different from ChatGPT?',
-                                a: 'ChatGPT is a general-purpose tool. Ibex is purpose-built for IB — it understands command terms, HL/SL distinctions, and mark scheme conventions. It can answer directly from your uploaded notes and cites the specific source for every answer.',
-                            },
-                            {
-                                q: 'Can I use it for A-Level?',
-                                a: 'The platform is designed primarily for IB Diploma students, but A-Level students studying overlapping subjects (Chemistry, Biology, Physics, Maths) will find most of the AI responses directly useful. A-Level-specific support is on the roadmap.',
-                            },
-                            {
-                                q: 'Can I upload my own notes?',
-                                a: 'Yes. You can upload PDFs — textbooks, teacher notes, past papers — and the AI will answer questions by drawing directly from your documents, with citations showing exactly which file and section it referenced.',
-                            },
-                            {
-                                q: 'How do study rooms work?',
-                                a: 'Study rooms are live video sessions with HD video, a collaborative whiteboard, and a shared Pomodoro timer. You can invite classmates via a link. Everyone in the room runs on the same focus timer, keeping the session on track.',
-                            },
-                            {
-                                q: 'Do I need to sign up to try the AI?',
-                                a: 'No. You can ask the AI up to 3 questions per day without creating an account — just use the "Try it now" section on this page. Creating a free account removes that limit and unlocks study rooms, Q&A, and document uploads.',
-                            },
-                            {
-                                q: 'When does it launch?',
-                                a: 'We haven\'t locked in a public date yet. Waitlist members will be the first to know — you\'ll get an email when your access is ready, no need to keep checking.',
-                            },
-                            {
-                                q: 'How do referral credits work?',
-                                a: 'Every friend who joins the waitlist using your link earns you 25 credits. When they create an account at launch, you get an additional 100 XP — credited automatically to your profile.',
-                            },
-                            {
-                                q: 'Is my data safe?',
-                                a: 'Yes. Documents you upload are stored securely and only used to answer your own queries. We never share your data with third parties or use it to train external AI models.',
-                            },
-                        ].map(({ q, a }) => (
-                            <details key={q} className="wl-faq-item">
-                                <summary className="wl-faq-q">{q}</summary>
-                                <p className="wl-faq-a">{a}</p>
-                            </details>
-                        ))}
+                        {FAQ_ITEMS.map(({ q, a }, i) => {
+                            const isOpen = openFaq === i;
+                            return (
+                                <div key={q} className={`wl-faq-item${isOpen ? ' wl-faq-item--open' : ''}`}>
+                                    <button
+                                        className="wl-faq-q"
+                                        onClick={() => setOpenFaq(isOpen ? null : i)}
+                                        aria-expanded={isOpen}
+                                        aria-controls={`faq-answer-${i}`}
+                                    >
+                                        {q}
+                                        <span className="wl-faq-chevron" aria-hidden="true">›</span>
+                                    </button>
+                                    <div
+                                        className="wl-faq-answer-wrap"
+                                        id={`faq-answer-${i}`}
+                                        role="region"
+                                        aria-labelledby={`faq-btn-${i}`}
+                                    >
+                                        <div className="wl-faq-answer-inner">
+                                            <p className="wl-faq-a">{a}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
             </section>

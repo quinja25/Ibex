@@ -216,3 +216,162 @@ describe('Waitlist page — referral code via URL', () => {
         expect(screen.queryByPlaceholderText(/referral code/i)).not.toBeInTheDocument();
     });
 });
+
+describe('Waitlist page — hamburger nav', () => {
+    test('hamburger button is present in the DOM', () => {
+        renderWaitlist();
+        expect(screen.getByRole('button', { name: /open menu/i })).toBeInTheDocument();
+    });
+
+    test('hamburger button has aria-expanded=false by default', () => {
+        renderWaitlist();
+        expect(screen.getByRole('button', { name: /open menu/i })).toHaveAttribute('aria-expanded', 'false');
+    });
+
+    test('mobile nav is not rendered by default', () => {
+        renderWaitlist();
+        expect(screen.queryByRole('navigation', { name: /mobile menu/i })).not.toBeInTheDocument();
+    });
+
+    test('clicking hamburger shows mobile nav', () => {
+        renderWaitlist();
+        fireEvent.click(screen.getByRole('button', { name: /open menu/i }));
+        expect(screen.getByRole('navigation', { name: /mobile menu/i })).toBeInTheDocument();
+    });
+
+    test('clicking hamburger sets aria-expanded=true', () => {
+        renderWaitlist();
+        const btn = screen.getByRole('button', { name: /open menu/i });
+        fireEvent.click(btn);
+        expect(screen.getByRole('button', { name: /close menu/i })).toHaveAttribute('aria-expanded', 'true');
+    });
+
+    test('clicking hamburger again closes mobile nav', () => {
+        renderWaitlist();
+        const btn = screen.getByRole('button', { name: /open menu/i });
+        fireEvent.click(btn);
+        expect(screen.getByRole('navigation', { name: /mobile menu/i })).toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: /close menu/i }));
+        expect(screen.queryByRole('navigation', { name: /mobile menu/i })).not.toBeInTheDocument();
+    });
+
+    test('mobile nav contains Features, Try the AI, and FAQ links', () => {
+        renderWaitlist();
+        fireEvent.click(screen.getByRole('button', { name: /open menu/i }));
+        const mobileNav = screen.getByRole('navigation', { name: /mobile menu/i });
+        expect(mobileNav).toHaveTextContent('Features');
+        expect(mobileNav).toHaveTextContent('Try the AI');
+        expect(mobileNav).toHaveTextContent('FAQ');
+    });
+
+    test('clicking a mobile nav link closes the nav', () => {
+        renderWaitlist();
+        fireEvent.click(screen.getByRole('button', { name: /open menu/i }));
+        const mobileNav = screen.getByRole('navigation', { name: /mobile menu/i });
+        fireEvent.click(mobileNav.querySelector('a[href="#features"]'));
+        expect(screen.queryByRole('navigation', { name: /mobile menu/i })).not.toBeInTheDocument();
+    });
+});
+
+describe('Waitlist page — scroll reveal classes', () => {
+    test('wl-reveal elements do not have wl-revealed class on initial render', () => {
+        renderWaitlist();
+        const revealEls = document.querySelectorAll('.wl-reveal');
+        expect(revealEls.length).toBeGreaterThan(0);
+        revealEls.forEach(el => {
+            expect(el).not.toHaveClass('wl-revealed');
+        });
+    });
+
+    test('feature rows have directional reveal classes', () => {
+        renderWaitlist();
+        const rows = document.querySelectorAll('.wl-feature-row');
+        expect(rows.length).toBeGreaterThan(0);
+        // Even-index rows slide from left, odd-index rows slide from right
+        expect(rows[0]).toHaveClass('wl-reveal--from-left');
+        if (rows.length > 1) {
+            expect(rows[1]).toHaveClass('wl-reveal--from-right');
+        }
+    });
+
+    test('hero elements have data-delay attributes for staggered reveal', () => {
+        renderWaitlist();
+        const badge = document.querySelector('.wl-badge');
+        const headline = document.querySelector('.wl-headline');
+        expect(badge).toHaveAttribute('data-delay', '0');
+        expect(headline).toHaveAttribute('data-delay', '100');
+    });
+});
+
+describe('Waitlist page — FAQ accordion', () => {
+    test('renders all FAQ questions', () => {
+        renderWaitlist();
+        expect(screen.getByText('Is Ibex free?')).toBeInTheDocument();
+        expect(screen.getByText('Which IB subjects does it cover?')).toBeInTheDocument();
+        expect(screen.getByText('How is Ibex different from ChatGPT?')).toBeInTheDocument();
+        expect(screen.getByText('When does it launch?')).toBeInTheDocument();
+    });
+
+    test('FAQ items are collapsed by default (no open class)', () => {
+        renderWaitlist();
+        const items = document.querySelectorAll('.wl-faq-item');
+        items.forEach(item => {
+            expect(item).not.toHaveClass('wl-faq-item--open');
+        });
+    });
+
+    test('clicking a question reveals its answer', async () => {
+        renderWaitlist();
+        fireEvent.click(screen.getByRole('button', { name: /Is Ibex free/i }));
+        await waitFor(() => {
+            expect(screen.getByText(/core platform is free/i)).toBeVisible();
+        });
+    });
+
+    test('FAQ button has aria-expanded=false by default', () => {
+        renderWaitlist();
+        const btn = screen.getByRole('button', { name: /Is Ibex free/i });
+        expect(btn).toHaveAttribute('aria-expanded', 'false');
+    });
+
+    test('FAQ button has aria-expanded=true when open', async () => {
+        renderWaitlist();
+        const btn = screen.getByRole('button', { name: /Is Ibex free/i });
+        fireEvent.click(btn);
+        await waitFor(() => {
+            expect(btn).toHaveAttribute('aria-expanded', 'true');
+        });
+    });
+
+    test('clicking an open question closes it', async () => {
+        renderWaitlist();
+        const btn = screen.getByRole('button', { name: /Is Ibex free/i });
+        fireEvent.click(btn);
+        await waitFor(() => expect(btn).toHaveAttribute('aria-expanded', 'true'));
+        fireEvent.click(btn);
+        await waitFor(() => {
+            expect(btn).toHaveAttribute('aria-expanded', 'false');
+        });
+    });
+
+    test('opening one question closes the previously open one', async () => {
+        renderWaitlist();
+        const btn1 = screen.getByRole('button', { name: /Is Ibex free/i });
+        const btn2 = screen.getByRole('button', { name: /Which IB subjects/i });
+        fireEvent.click(btn1);
+        await waitFor(() => expect(btn1).toHaveAttribute('aria-expanded', 'true'));
+        fireEvent.click(btn2);
+        await waitFor(() => {
+            expect(btn2).toHaveAttribute('aria-expanded', 'true');
+            expect(btn1).toHaveAttribute('aria-expanded', 'false');
+        });
+    });
+
+    test('FAQ answer region is linked to its button via aria-controls', () => {
+        renderWaitlist();
+        const btn = screen.getByRole('button', { name: /Is Ibex free/i });
+        const controlsId = btn.getAttribute('aria-controls');
+        expect(controlsId).toBeTruthy();
+        expect(document.getElementById(controlsId)).toBeInTheDocument();
+    });
+});
