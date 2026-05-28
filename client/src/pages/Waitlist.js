@@ -5,6 +5,28 @@ import Logo from '../Logo1.svg';
 import { TryAiWidget } from '../components/TryAiWidget';
 import './Waitlist.css';
 
+const COUNTRIES = [
+    'Afghanistan','Albania','Algeria','Andorra','Angola','Argentina','Armenia','Australia',
+    'Austria','Azerbaijan','Bahrain','Bangladesh','Belarus','Belgium','Belize','Benin',
+    'Bhutan','Bolivia','Bosnia and Herzegovina','Botswana','Brazil','Brunei','Bulgaria',
+    'Burkina Faso','Burundi','Cambodia','Cameroon','Canada','Chad','Chile','China',
+    'Colombia','Congo','Costa Rica','Croatia','Cuba','Cyprus','Czech Republic','Denmark',
+    'Dominican Republic','Ecuador','Egypt','El Salvador','Estonia','Ethiopia','Finland',
+    'France','Georgia','Germany','Ghana','Greece','Guatemala','Honduras','Hong Kong',
+    'Hungary','Iceland','India','Indonesia','Iran','Iraq','Ireland','Israel','Italy',
+    'Jamaica','Japan','Jordan','Kazakhstan','Kenya','Kuwait','Kyrgyzstan','Laos','Latvia',
+    'Lebanon','Libya','Liechtenstein','Lithuania','Luxembourg','Macau','Malaysia','Maldives',
+    'Malta','Mexico','Moldova','Monaco','Mongolia','Montenegro','Morocco','Mozambique',
+    'Myanmar','Nepal','Netherlands','New Zealand','Nicaragua','Nigeria','North Korea',
+    'North Macedonia','Norway','Oman','Pakistan','Panama','Paraguay','Peru','Philippines',
+    'Poland','Portugal','Qatar','Romania','Russia','Rwanda','Saudi Arabia','Senegal',
+    'Serbia','Singapore','Slovakia','Slovenia','Somalia','South Africa','South Korea',
+    'South Sudan','Spain','Sri Lanka','Sudan','Sweden','Switzerland','Syria','Taiwan',
+    'Tajikistan','Tanzania','Thailand','Tunisia','Turkey','Turkmenistan','Uganda','Ukraine',
+    'United Arab Emirates','United Kingdom','United States','Uruguay','Uzbekistan',
+    'Venezuela','Vietnam','Yemen','Zambia','Zimbabwe',
+];
+
 
 const PRIMARY_FEATURES = [
     {
@@ -193,11 +215,37 @@ export const Waitlist = () => {
     const [refStats, setRefStats]         = useState({ referralCount: 0, waitlistCredits: 0 });
     const [countries, setCountries]       = useState([]);
     const [copied, setCopied]             = useState(false);
+    const [hasUrlRef, setHasUrlRef]       = useState(false);
+    const [emailError, setEmailError]     = useState('');
+    const [nameError, setNameError]       = useState('');
+    const [countryError, setCountryError] = useState('');
+
+    const validateCountry = (val) => {
+        if (!val.trim()) return 'Country is required.';
+        if (!/^[a-zA-Z\s\-'.()]+$/.test(val.trim())) return 'Please enter country name in English.';
+        return '';
+    };
+
+    const EMAIL_DOMAINS = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'icloud.com', 'proton.me', 'naver.com', 'kakao.com'];
+
+    const validateEmail = (val) => {
+        if (!val.trim()) return 'Email is required.';
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val.trim())) return 'Please enter a valid email address.';
+        return '';
+    };
+
+    const localPart = email.includes('@') ? email.split('@')[0] : email;
+    const emailSuggestions = localPart.length > 0
+        ? EMAIL_DOMAINS.map(d => `${localPart}@${d}`)
+        : [];
 
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
         const ref = params.get('ref');
-        if (ref && /^[a-f0-9]{8}$/.test(ref)) setReferredBy(ref);
+        if (ref && /^[a-f0-9]{8}$/.test(ref)) {
+            setReferredBy(ref);
+            setHasUrlRef(true);
+        }
 
         fetch('/public/waitlist/count')
             .then(r => r.json())
@@ -333,11 +381,11 @@ export const Waitlist = () => {
                         {status === 'success' ? (
                             <div className="wl-success" role="status">
                                 <div className="wl-success-mark" aria-hidden="true">✓</div>
-                                <h3>You're on the list.</h3>
-                                <p>You're <strong>#{count.toLocaleString()}</strong> in line. Check your email for confirmation.</p>
+                                <h3>You're in{name ? `, ${name.split(' ')[0]}` : ''}.</h3>
+                                <p>We'll email you the moment access opens — no need to check back.</p>
                                 {referralLink && (
                                     <div className="wl-referral-box">
-                                        <p className="wl-referral-label">Invite friends — earn <strong>25 credits</strong> per signup, <strong>100 XP</strong> when they join</p>
+                                        <p className="wl-referral-label">Move up the list — every friend who joins earns you <strong>25 credits</strong> and <strong>100 XP</strong> at launch</p>
                                         <div className="wl-referral-link-row">
                                             <span className="wl-referral-link-text">{referralLink}</span>
                                             <button className="wl-referral-copy" onClick={handleCopy} aria-label="Copy referral link">
@@ -354,7 +402,7 @@ export const Waitlist = () => {
                                     </div>
                                 )}
                                 <a href="#try-ai" className="wl-btn-primary wl-btn-full" style={{ marginTop: '1rem' }}>
-                                    Try the AI now
+                                    Try the AI while you wait →
                                 </a>
                             </div>
                         ) : status === 'duplicate' ? (
@@ -362,6 +410,21 @@ export const Waitlist = () => {
                                 <div className="wl-success-mark" aria-hidden="true">✓</div>
                                 <h3>Already registered.</h3>
                                 <p>You're already on the waitlist. We'll let you know when access opens.</p>
+                                {referralLink && (
+                                    <div className="wl-referral-box">
+                                        <p className="wl-referral-label">Your referral link — share to earn <strong>25 credits</strong> per signup</p>
+                                        <div className="wl-referral-link-row">
+                                            <span className="wl-referral-link-text">{referralLink}</span>
+                                            <button className="wl-referral-copy" onClick={handleCopy} aria-label="Copy referral link">
+                                                {copied ? '✓ Copied' : 'Copy'}
+                                            </button>
+                                        </div>
+                                        <div className="wl-share-row">
+                                            <button className="wl-share-btn wl-share-x" onClick={shareOnX}>Share on X</button>
+                                            <button className="wl-share-btn wl-share-wa" onClick={shareOnWhatsApp}>WhatsApp</button>
+                                        </div>
+                                    </div>
+                                )}
                                 <a href="#try-ai" className="wl-btn-primary wl-btn-full">
                                     Try the AI now
                                 </a>
@@ -374,52 +437,73 @@ export const Waitlist = () => {
                                 </div>
                                 <form className="wl-form" onSubmit={handleSubmit} noValidate>
                                     <input
-                                        className="wl-input"
+                                        className={`wl-input${nameError ? ' wl-input--error' : ''}`}
                                         type="text"
                                         placeholder="Your name"
                                         value={name}
-                                        onChange={e => setName(e.target.value)}
+                                        onChange={e => { setName(e.target.value); if (nameError && e.target.value.trim()) setNameError(''); }}
+                                        onBlur={e => setNameError(e.target.value.trim() ? '' : 'Name is required.')}
                                         required
                                         disabled={status === 'loading'}
                                         aria-label="Full name"
                                         autoComplete="name"
                                     />
+                                    {nameError && (
+                                        <p className="wl-field-error" role="alert">{nameError}</p>
+                                    )}
                                     <input
-                                        className="wl-input"
+                                        className={`wl-input${emailError ? ' wl-input--error' : ''}`}
                                         type="email"
+                                        id="wl-email"
+                                        list="email-suggestions"
                                         placeholder="your@email.com"
                                         value={email}
-                                        onChange={e => setEmail(e.target.value)}
+                                        onChange={e => { setEmail(e.target.value); if (emailError) setEmailError(validateEmail(e.target.value)); }}
+                                        onBlur={e => setEmailError(validateEmail(e.target.value))}
                                         required
                                         disabled={status === 'loading'}
                                         aria-label="Email address"
+                                        aria-describedby={emailError ? 'wl-email-error' : undefined}
                                         autoComplete="email"
                                     />
-                                    <div className="wl-form-row">
-                                        <input
-                                            className="wl-input"
-                                            type="text"
-                                            placeholder="Country"
-                                            value={country}
-                                            onChange={e => setCountry(e.target.value)}
-                                            required
-                                            disabled={status === 'loading'}
-                                            aria-label="Country"
-                                            autoComplete="country-name"
-                                        />
-                                        <select
-                                            className="wl-select"
-                                            value={role}
-                                            onChange={e => setRole(e.target.value)}
-                                            disabled={status === 'loading'}
-                                            aria-label="I am a"
-                                        >
-                                            <option value="student">Student</option>
-                                            <option value="alumni">Alumni / Mentor</option>
-                                            <option value="other">Other</option>
-                                        </select>
-                                    </div>
-                                    {!referredBy && (
+                                    <datalist id="email-suggestions">
+                                        {emailSuggestions.map(s => <option key={s} value={s} />)}
+                                    </datalist>
+                                    {emailError && (
+                                        <p id="wl-email-error" className="wl-field-error" role="alert">{emailError}</p>
+                                    )}
+                                    <input
+                                        className={`wl-input${countryError ? ' wl-input--error' : ''}`}
+                                        type="text"
+                                        list="country-list"
+                                        placeholder="Country"
+                                        value={country}
+                                        onChange={e => { setCountry(e.target.value); if (countryError) setCountryError(validateCountry(e.target.value)); }}
+                                        onBlur={e => setCountryError(validateCountry(e.target.value))}
+                                        required
+                                        disabled={status === 'loading'}
+                                        aria-label="Country"
+                                        autoComplete="off"
+                                    />
+                                    <datalist id="country-list">
+                                        {COUNTRIES.filter(c => c.toLowerCase().includes(country.toLowerCase()) && country.length > 0).map(c => (
+                                            <option key={c} value={c} />
+                                        ))}
+                                    </datalist>
+                                    {countryError && (
+                                        <p className="wl-field-error" role="alert">{countryError}</p>
+                                    )}
+                                    <select
+                                        className="wl-select"
+                                        value={role}
+                                        onChange={e => setRole(e.target.value)}
+                                        disabled={status === 'loading'}
+                                        aria-label="I am a"
+                                    >
+                                        <option value="student">Student</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                    {!hasUrlRef && (
                                         <input
                                             className="wl-input"
                                             type="text"
@@ -438,7 +522,7 @@ export const Waitlist = () => {
                                     <button
                                         type="submit"
                                         className="wl-btn-primary wl-btn-full"
-                                        disabled={status === 'loading' || !email.trim() || !name.trim() || !country.trim()}
+                                        disabled={status === 'loading' || !email.trim() || !name.trim() || !country.trim() || !!emailError || !!nameError || !!countryError}
                                     >
                                         {status === 'loading' ? 'Joining…' : 'Join the waitlist'}
                                     </button>

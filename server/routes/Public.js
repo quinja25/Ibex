@@ -40,6 +40,7 @@ const sendWaitlistConfirmation = async (entry, position, clientUrl) => {
             <hr style="border:none;border-top:1px solid #eee;margin:24px 0"/>
             <h3 style="margin-bottom:8px">Move up the list — invite a friend</h3>
             <p style="color:#555">Every friend who joins the waitlist earns you <strong>${WAITLIST_CREDITS_PER_REFERRAL} credits</strong>. When they create an account at launch, you get <strong>100 bonus XP</strong> on top.</p>
+            <p style="color:#555;margin-bottom:4px">Your referral code: <strong style="font-family:monospace;font-size:15px;letter-spacing:1px">${entry.referralCode}</strong></p>
             <a href="${referralLink}" style="display:inline-block;margin:12px 0;padding:12px 24px;background:#6c63ff;color:#fff;border-radius:8px;text-decoration:none;font-weight:600">Share your referral link</a>
             <p style="font-size:13px;color:#888;word-break:break-all">Or copy: ${referralLink}</p>
             <hr style="border:none;border-top:1px solid #eee;margin:24px 0"/>
@@ -281,10 +282,13 @@ router.post('/waitlist', waitlistLimiter, async (req, res) => {
         const validRoles = ['student', 'alumni', 'other'];
         const cleanRole = validRoles.includes(role) ? role : 'student';
 
-        // Validate referral code if provided
-        const cleanRef = typeof referredBy === 'string' && /^[a-f0-9]{8}$/.test(referredBy.trim())
-            ? referredBy.trim()
-            : null;
+        // Validate referral code if provided — must exist in DB
+        let validRef = null;
+        const rawRef = typeof referredBy === 'string' ? referredBy.trim() : '';
+        if (/^[a-f0-9]{8}$/.test(rawRef)) {
+            const referrer = await WaitlistEntries.findOne({ where: { referralCode: rawRef } });
+            if (referrer) validRef = rawRef;
+        }
 
         const referralCode = generateReferralCode();
 
@@ -296,7 +300,7 @@ router.post('/waitlist', waitlistLimiter, async (req, res) => {
                 country: country.trim().slice(0, 100),
                 role: cleanRole,
                 referralCode,
-                referredBy: cleanRef,
+                referredBy: validRef,
             },
         });
 
@@ -311,16 +315,16 @@ router.post('/waitlist', waitlistLimiter, async (req, res) => {
         }
 
         // Award credits to referrer (fire-and-forget)
-        if (cleanRef) {
+        if (validRef) {
             WaitlistEntries.increment('waitlistCredits', {
                 by: WAITLIST_CREDITS_PER_REFERRAL,
-                where: { referralCode: cleanRef },
+                where: { referralCode: validRef },
             }).catch(err => console.error('[Waitlist] Credit increment failed:', err));
         }
 
         // Send confirmation email (fire-and-forget)
         const clientUrl = process.env.CLIENT_URL || 'http://localhost:3000';
-        sendWaitlistConfirmation(entry, count, clientUrl).catch(() => {});
+        sendWaitlistConfirmation(entry, count, clientUrl).catch(err => console.error('[Waitlist] Confirmation email failed:', err));
 
         res.status(201).json({
             success: true,

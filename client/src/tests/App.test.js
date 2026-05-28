@@ -12,13 +12,13 @@ jest.mock('axios', () => ({
   })),
 }));
 
-jest.mock('./api', () => ({
+jest.mock('../api', () => ({
   __esModule: true,
   default: {
-    get: jest.fn(),
-    post: jest.fn(),
-    put: jest.fn(),
-    delete: jest.fn(),
+    get: jest.fn(() => Promise.resolve({ data: {} })),
+    post: jest.fn(() => Promise.resolve({ data: {} })),
+    put: jest.fn(() => Promise.resolve({ data: {} })),
+    delete: jest.fn(() => Promise.resolve({ data: {} })),
   },
 }));
 
@@ -27,30 +27,44 @@ jest.mock('@react-oauth/google', () => ({
   useGoogleLogin: () => jest.fn(),
 }));
 
-// Stub all pages to avoid deep import chains (socket.io, WebRTC, canvas, AiAssistant, etc.)
-jest.mock('./pages/Home', () => ({ Home: () => <div data-testid="page-home">Home</div> }));
-jest.mock('./pages/Login', () => ({ Login: () => <div data-testid="page-login">Login</div> }));
-jest.mock('./pages/FindGroup', () => ({ FindGroup: () => <div data-testid="page-findgroup" /> }));
-jest.mock('./pages/Chat', () => ({ Chat: () => <div data-testid="page-chat" /> }));
-jest.mock('./pages/Dashboard', () => ({ Dashboard: () => <div data-testid="page-dashboard" /> }));
-jest.mock('./pages/Group', () => ({ Group: () => <div data-testid="page-group" /> }));
-jest.mock('./pages/CreateGroup', () => ({ CreateGroup: () => <div data-testid="page-creategroup" /> }));
-jest.mock('./pages/Registration', () => ({ Registration: () => <div data-testid="page-registration" /> }));
-jest.mock('./pages/Lobby', () => ({ Lobby: () => <div data-testid="page-lobby" /> }));
-jest.mock('./pages/Schedule', () => ({ Schedule: () => <div data-testid="page-schedule" /> }));
-jest.mock('./pages/SearchAlumni', () => ({ SearchAlumni: () => <div data-testid="page-searchalumni" /> }));
-jest.mock('./pages/AlumniProfile', () => ({ AlumniProfile: () => <div data-testid="page-alumniprofile" /> }));
-jest.mock('./pages/Marketplace', () => ({ Marketplace: () => <div data-testid="page-marketplace" /> }));
-jest.mock('./pages/Wiki', () => ({ Wiki: () => <div data-testid="page-wiki" /> }));
-jest.mock('./pages/QABoard', () => ({ QABoard: () => <div data-testid="page-qaboard" /> }));
-jest.mock('./pages/AdminDashboard', () => ({ AdminDashboard: () => <div data-testid="page-admindashboard" /> }));
-jest.mock('./pages/ForgotPassword', () => ({ ForgotPassword: () => <div data-testid="page-forgotpassword" /> }));
-jest.mock('./pages/ResetPassword', () => ({ ResetPassword: () => <div data-testid="page-resetpassword" /> }));
-jest.mock('./pages/VerifyEmail', () => ({ __esModule: true, default: () => <div data-testid="page-verifyemail" /> }));
-jest.mock('./pages/AiChat', () => ({ AiChat: () => <div data-testid="page-aichat" /> }));
-jest.mock('./pages/NotFound', () => ({ NotFound: () => <div data-testid="page-notfound" /> }));
+jest.mock('react-helmet-async', () => ({
+  HelmetProvider: ({ children }) => <>{children}</>,
+  Helmet: () => null,
+}));
 
-import App from './App';
+jest.mock('../contexts/NotificationContext', () => ({
+  NotificationProvider: ({ children }) => <>{children}</>,
+  useNotifications: () => ({ notifications: [], unreadCount: 0, markRead: jest.fn(), markAllRead: jest.fn(), remove: jest.fn(), enabled: false }),
+}));
+
+jest.mock('../components/ErrorBoundary', () => ({
+  ErrorBoundary: ({ children }) => <>{children}</>,
+}));
+
+// Stub all pages to avoid deep import chains (socket.io, WebRTC, canvas, AiAssistant, etc.)
+jest.mock('../pages/Waitlist', () => ({ Waitlist: () => <div data-testid="page-waitlist" /> }));
+jest.mock('../pages/BillingSuccess', () => ({ BillingSuccess: () => <div data-testid="page-billingsuccess" /> }));
+jest.mock('../pages/Home', () => ({ Home: () => <div data-testid="page-home">Home</div> }));
+jest.mock('../pages/Login', () => ({ Login: () => <div data-testid="page-login">Login</div> }));
+jest.mock('../pages/FindGroup', () => ({ FindGroup: () => <div data-testid="page-findgroup" /> }));
+jest.mock('../pages/Chat', () => ({ Chat: () => <div data-testid="page-chat" /> }));
+jest.mock('../pages/Dashboard', () => ({ Dashboard: () => <div data-testid="page-dashboard" /> }));
+jest.mock('../pages/Group', () => ({ Group: () => <div data-testid="page-group" /> }));
+jest.mock('../pages/CreateGroup', () => ({ CreateGroup: () => <div data-testid="page-creategroup" /> }));
+jest.mock('../pages/Registration', () => ({ Registration: () => <div data-testid="page-registration" /> }));
+jest.mock('../pages/Lobby', () => ({ Lobby: () => <div data-testid="page-lobby" /> }));
+jest.mock('../pages/Schedule', () => ({ Schedule: () => <div data-testid="page-schedule" /> }));
+jest.mock('../pages/Marketplace', () => ({ Marketplace: () => <div data-testid="page-marketplace" /> }));
+jest.mock('../pages/Wiki', () => ({ Wiki: () => <div data-testid="page-wiki" /> }));
+jest.mock('../pages/QABoard', () => ({ QABoard: () => <div data-testid="page-qaboard" /> }));
+jest.mock('../pages/AdminDashboard', () => ({ AdminDashboard: () => <div data-testid="page-admindashboard" /> }));
+jest.mock('../pages/ForgotPassword', () => ({ ForgotPassword: () => <div data-testid="page-forgotpassword" /> }));
+jest.mock('../pages/ResetPassword', () => ({ ResetPassword: () => <div data-testid="page-resetpassword" /> }));
+jest.mock('../pages/VerifyEmail', () => ({ __esModule: true, default: () => <div data-testid="page-verifyemail" /> }));
+jest.mock('../pages/AiChat', () => ({ AiChat: () => <div data-testid="page-aichat" /> }));
+jest.mock('../pages/NotFound', () => ({ NotFound: () => <div data-testid="page-notfound" /> }));
+
+import App from '../App';
 
 describe('App routing', () => {
   beforeEach(() => {
@@ -131,7 +145,6 @@ describe('App routing', () => {
     localStorage.setItem('userData', JSON.stringify({ id: 1, name: 'Alice', isAdmin: false }));
     window.history.pushState({}, '', '/findgroup');
     render(<App />);
-    // After redirect, find-group page should be shown
     expect(screen.getByTestId('page-findgroup')).toBeInTheDocument();
   });
 });
