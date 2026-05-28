@@ -1,6 +1,33 @@
 const pdfParse = require('pdf-parse');
 const { chunkText } = require('./embeddingService');
-const { cleanPDFText } = require('../scripts/ingest-common');
+
+function cleanPDFText(raw, extraRules) {
+    let text = raw;
+    text = text.replace(/©\s*International Baccalaureate[\s\S]*?applying-for-a-license\/\.\s*/g, '');
+    text = text.replace(/©\s*Organisation du Baccalauréat[\s\S]*?applying-for-a-license\/\.\s*/g, '');
+    text = text.replace(/©\s*Organización del Bachillerato[\s\S]*?applying-for-a-license\/\.\s*/g, '');
+    text = text.replace(/–\s*\d+\s*–\s*\n?\d{4}\s*–\s*\d{4}[A-Z]?\s*/g, '');
+    text = text.replace(/^–\s*\d+\s*–\s*$/gm, '');
+    text = text.replace(/^[MN]\d{2}\/\d\/[A-Z]+\/\S+\/\S+\/\S+\/\S+\s*$/gm, '');
+    text = text.replace(/^\d{4}\s*[-–]\s*\d{4}[A-Z]?\s*$/gm, '');
+    text = text.replace(/\nTurn over\s*\n/gi, '\n');
+    text = text.replace(/\nBlank page\s*\n/gi, '\n');
+    text = text.replace(/\(Question \d+ continued\)\s*/g, '');
+    text = text.replace(/\(This question continues on.*?\)\s*/g, '');
+    text = text.replace(/Disclaimer:[\s\S]*?Source adapted\.\s*/g, '');
+    text = text.replace(/  +/g, ' ');
+    text = text.replace(/(\w)\s*\n(\w)/g, (match, before, after) => {
+        if (/[a-z]/.test(before) && /[a-z]/.test(after)) return before + after;
+        return before + '\n' + after;
+    });
+    text = text.replace(/\n{3,}/g, '\n\n');
+    if (extraRules) {
+        for (const rule of extraRules) {
+            text = text.replace(rule.pattern, rule.replacement || '');
+        }
+    }
+    return text;
+}
 
 // IB command terms — used to annotate past paper chunk prefixes
 const IB_COMMAND_TERMS = [
