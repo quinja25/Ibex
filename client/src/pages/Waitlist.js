@@ -329,7 +329,6 @@ export const Waitlist = () => {
     const [countries, setCountries]       = useState([]);
     const [copied, setCopied]             = useState(false);
     const [hasUrlRef, setHasUrlRef]       = useState(false);
-    const [position, setPosition]         = useState(0);
     const [selectedSubjects, setSelectedSubjects] = useState([]);
     const [emailError, setEmailError]     = useState('');
     const [nameError, setNameError]       = useState('');
@@ -427,7 +426,6 @@ export const Waitlist = () => {
             localStorage.removeItem(DRAFT_KEY);
             setDraftBanner(null);
             setCount(data.count || count + 1);
-            setPosition(data.count || count + 1);
             if (data.referralCode) {
                 setReferralCode(data.referralCode);
                 window.gtag?.('event', 'waitlist_signup', { referred_by: referredBy || null, position: data.count });
