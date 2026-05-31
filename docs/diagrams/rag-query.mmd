@@ -1,0 +1,55 @@
+flowchart TD
+    USER(["👤 Student query\ne.g. Explain the Haber process"])
+
+    USER --> RW{"Query Rewriter\nRAG_QUERY_REWRITE_ENABLED"}
+    RW -->|"multi-turn chat\nhas history"| REWRITE["gpt-4o-mini\nrewrite to standalone query"]
+    RW -->|"first message\nno history"| PASSTHRU["original query\nunchanged"]
+
+    REWRITE --> FT & VEC & IC
+    PASSTHRU --> FT & VEC & IC
+
+    subgraph FT ["🔤 Sparse Retrieval — Keyword"]
+        direction TB
+        KW["extractKeywords\nstop word removal"] --> SYNE["expandKeywords\nIB synonym map\nSN2 → nucleophilic substitution\nSA node → sinoatrial node"]
+        SYNE --> MYSQL["MySQL FULLTEXT\nWiki · Q&A · Posts · Resources"]
+    end
+
+    subgraph VEC ["🧠 Dense Retrieval — Semantic"]
+        direction TB
+        HYDE{"HyDE\nquery ≤ 120 chars?"}
+        HYDE -->|yes| HYDEOUT["gpt-4o-mini\nhypothetical answer\nembedded instead of query"]
+        HYDE -->|no| RAWV["query used\ndirectly"]
+        HYDEOUT --> SYNAUG["augmentQueryForEmbedding\nappend synonym variants"]
+        RAWV --> SYNAUG
+        SYNAUG --> EMB["createEmbedding\ntext-embedding-3-small"]
+        EMB --> SEARCH["findSimilar\ncosine dot product\nIVF index · O(√n)"]
+    end
+
+    subgraph IC ["🎯 Intent Classification"]
+        direction TB
+        HEUR["Regex signals\nexam · concept · code · howto"]
+        HEUR --> BOOST["Per-source boosts\nexam → +0.25 past papers\nconcept → +0.20 wiki"]
+    end
+
+    MYSQL --> RRF
+    SEARCH --> RRF
+    BOOST --> RRF
+
+    RRF["Reciprocal Rank Fusion\nRRF k=60\n1÷rank merged from both lists\nnormalises FULLTEXT vs vector scores"]
+    RRF --> PERS["Post-RRF boosts\nuser docs +0.025\nglobal past papers +0.05"]
+    PERS --> RERANK["🏆 OpenAI Reranker\ngpt-4o-mini · 1 batched call\nscore top 20 candidates 0–1"]
+    RERANK --> TOP5["Top 5 chunks\n~400 tokens each"]
+    TOP5 --> PROMPT["Build system prompt\nchunks injected as context\nwith source citations"]
+    PROMPT --> FINAL["gpt-4o-mini\ngenerate cited answer"]
+    FINAL --> ANS(["✅ Answer + sources\nshown to student"])
+
+    style USER fill:#4A90D9,color:#fff,stroke:#2c6fad
+    style ANS fill:#2ECC71,color:#fff,stroke:#27ae60
+    style RRF fill:#9B59B6,color:#fff,stroke:#7d3c98
+    style RERANK fill:#E74C3C,color:#fff,stroke:#c0392b
+    style FINAL fill:#E67E22,color:#fff,stroke:#d35400
+    style REWRITE fill:#E67E22,color:#fff,stroke:#d35400
+    style HYDEOUT fill:#E67E22,color:#fff,stroke:#d35400
+    style TOP5 fill:#2ECC71,color:#fff,stroke:#27ae60
+    style RW fill:#F39C12,color:#fff,stroke:#e67e22
+    style HYDE fill:#F39C12,color:#fff,stroke:#e67e22

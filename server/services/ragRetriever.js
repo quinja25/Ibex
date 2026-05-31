@@ -5,6 +5,7 @@ const { embedText, findSimilar, hasEmbeddings } = require('./embeddingService');
 const { rerank } = require('./rerank');
 const { generateHypotheticalAnswer } = require('./hyde');
 const { classifyQuery } = require('./queryIntent');
+const { expandKeywords, augmentQueryForEmbedding } = require('./synonyms');
 
 const MAX_CHUNKS = parseInt(process.env.RAG_MAX_CHUNKS || '5', 10);
 const MAX_CHUNK_CHARS = 1200; // ~400 tokens (~3 chars per token)
@@ -30,11 +31,12 @@ const STOP_WORDS = new Set([
  * Extract meaningful keywords from a query string.
  */
 function extractKeywords(query) {
-    return query
+    const base = query
         .toLowerCase()
         .replace(/[^a-z0-9\s]/g, ' ')
         .split(/\s+/)
         .filter(w => w.length >= 2 && !STOP_WORDS.has(w));
+    return expandKeywords(base, query);
 }
 
 /**
@@ -380,7 +382,8 @@ async function vectorSearch(query, options = {}) {
         if (!vectorsExist) return [];
 
         const contextPrefix = [options.subject, options.major].filter(Boolean).join(' - ');
-        const augmentedQuery = contextPrefix ? `${contextPrefix}: ${query}` : query;
+        const queryWithSynonyms = augmentQueryForEmbedding(query);
+        const augmentedQuery = contextPrefix ? `${contextPrefix}: ${queryWithSynonyms}` : queryWithSynonyms;
         const { embedding } = await embedText(augmentedQuery);
         const similar = await findSimilar(embedding, {
             subject: options.subject || null,

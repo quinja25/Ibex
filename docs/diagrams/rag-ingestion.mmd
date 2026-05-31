@@ -1,0 +1,29 @@
+flowchart TD
+    PDF[/"📄 PDF Past Papers\n750 papers · 3 subjects"/]
+    PDF --> PARSE["pdf-parse\ntext-only extraction\nimages silently dropped"]
+    PARSE --> CLEAN["cleanPDFText\nstrip IB copyright · page numbers\nexam codes · boilerplate"]
+    CLEAN --> STRATEGY{Chunking\nstrategy}
+
+    STRATEGY -->|past papers| CQ["chunkByQuestions\nsplit at Q1 · Q2 boundaries\nkeep question + mark scheme together"]
+    STRATEGY -->|user uploads| CT["chunkText\nparagraph → sentence boundary\n150-token chunks with overlap"]
+
+    CQ --> PREFIX["Prefix each chunk\nSubject · Year · Paper · Topic · Marks"]
+    CT --> PREFIX
+
+    PREFIX --> STORE[("GlobalDocuments\nchunksJson")]
+
+    PREFIX --> EMBIN["createEmbedding\ntext-embedding-3-small\n1536-dim vector per chunk"]
+    EMBIN --> CEDB[("ContentEmbeddings\nFloat32Array BLOB\nMySQL · 21,656 rows")]
+
+    PDF --> MUPDF["mupdf\nrender pages with questions\nas PNG at 1.5× scale"]
+    MUPDF --> FIGS[/"uploads/figures/\npage PNGs for UI display\nnot used in RAG"/]
+
+    CEDB --> IVF["In-memory IVF index\nk-means · k=√n clusters\n3-pass Lloyd's · built async"]
+
+    style PDF fill:#4A90D9,color:#fff,stroke:#2c6fad
+    style STORE fill:#7B68EE,color:#fff,stroke:#5a4db5
+    style CEDB fill:#7B68EE,color:#fff,stroke:#5a4db5
+    style IVF fill:#2ECC71,color:#fff,stroke:#27ae60
+    style FIGS fill:#95a5a6,color:#fff,stroke:#7f8c8d
+    style EMBIN fill:#E67E22,color:#fff,stroke:#d35400
+    style STRATEGY fill:#F39C12,color:#fff,stroke:#e67e22
