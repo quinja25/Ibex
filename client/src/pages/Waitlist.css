@@ -280,6 +280,7 @@
 
 /* ── Signup card — elevated warm-white, sharp corners ── */
 .wl-card {
+    align-self: start;
     background: var(--card);
     border: 1px solid rgba(27,32,53,0.12);
     border-radius: 0;
@@ -691,15 +692,39 @@
 .wl-plan-earlybird { font-size: 0.73rem; color: var(--text-dim); text-align: center; margin: 10px 0 0; }
 @media (max-width: 600px) { .wl-pricing-grid { grid-template-columns: 1fr; } }
 
+/* ── Success position ── */
+.wl-success-position { font-size: 0.95rem; color: var(--text-dim); }
+.wl-success-position strong { color: var(--primary); font-size: 1.1rem; }
+
+/* ── Subject selector ── */
+.wl-subject-select { width: 100%; margin: 4px 0 8px; }
+.wl-subject-label { font-size: 0.82rem; font-weight: 600; color: var(--text-dim); margin: 0 0 8px; }
+.wl-subject-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.wl-subject-chip {
+    padding: 6px 14px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    background: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+.wl-subject-chip:hover { border-color: var(--primary); color: var(--primary); }
+.wl-subject-chip--active { background: var(--primary); border-color: var(--primary); color: #fff; }
+.wl-subject-cta { display: inline-block; margin-top: 10px; font-size: 0.82rem; font-weight: 600; color: var(--primary); text-decoration: none; }
+.wl-subject-cta:hover { text-decoration: underline; }
+
 /* ── Referral box ── */
-.wl-referral-box { margin-top: 1rem; padding: 16px; background: rgba(108,99,255,0.06); border: 1px solid rgba(108,99,255,0.18); border-radius: 12px; }
+.wl-referral-box { margin-top: 1rem; padding: 16px; background: rgba(108,99,255,0.06); border: 1px solid rgba(108,99,255,0.18); border-radius: 0; }
 .wl-referral-label { font-size: 0.82rem; color: var(--text-dim); margin: 0 0 10px; }
-.wl-referral-link-row { display: flex; align-items: center; gap: 8px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; margin-bottom: 10px; }
+.wl-referral-link-row { display: flex; align-items: center; gap: 8px; background: var(--bg); border: 1px solid var(--border); border-radius: 0; padding: 8px 10px; margin-bottom: 10px; }
 .wl-referral-link-text { font-size: 0.75rem; color: var(--text-dim); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.wl-referral-copy { flex-shrink: 0; font-size: 0.78rem; font-weight: 600; color: var(--primary); background: none; border: 1px solid var(--primary); border-radius: 6px; padding: 4px 10px; cursor: pointer; transition: background 0.15s, color 0.15s; }
+.wl-referral-copy { flex-shrink: 0; width: 90px; text-align: center; font-size: 0.78rem; font-weight: 600; color: var(--primary); background: none; border: 1px solid var(--primary); border-radius: 6px; padding: 4px 10px; cursor: pointer; transition: background 0.15s, color 0.15s; overflow: hidden; }
 .wl-referral-copy:hover { background: var(--primary); color: #fff; }
 .wl-share-row { display: flex; gap: 8px; }
-.wl-share-btn { flex: 1; padding: 9px 0; font-size: 0.82rem; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; transition: opacity 0.15s; }
+.wl-share-btn { flex: 1; padding: 9px 0; font-size: 0.82rem; font-weight: 600; border: none; border-radius: 0; cursor: pointer; transition: opacity 0.15s; }
 .wl-share-btn:hover { opacity: 0.85; }
 .wl-share-x  { background: #000; color: #fff; }
 .wl-share-wa { background: #25d366; color: #fff; }
@@ -901,8 +926,15 @@
     .wl-hero-inner { grid-template-columns: 1fr 380px; gap: 48px; }
 }
 @media (max-width: 900px) {
-    .wl-hero-inner { grid-template-columns: 1fr; gap: 48px; }
+    .wl-nav { padding: 0 20px; }
+    .wl-nav-links { display: none; }
+    .wl-nav-actions { display: none; }
+    .wl-hero { padding: 100px 20px 60px; }
+    .wl-hero-inner { grid-template-columns: 1fr; gap: 40px; }
     .wl-card { max-width: 500px; margin: 0 auto; width: 100%; }
+    .wl-section-inner { padding: 0 20px; }
+    .wl-count-strip { padding: 16px 20px; }
+    .wl-features { padding: 72px 20px; }
     .wl-feature-row { grid-template-columns: 1fr; gap: 40px; }
     .wl-feature-row--flip .wl-feature-row-text,
     .wl-feature-row--flip .wl-feature-row-visual { order: unset; }
@@ -912,8 +944,6 @@
     .wl-testimonials-grid { grid-template-columns: 1fr; }
     .wl-testimonial-card { border-right: none; border-bottom: 1px solid var(--border); }
     .wl-testimonial-card:last-child { border-bottom: none; }
-    .wl-nav-links { display: none; }
-    .wl-nav-actions { margin-left: auto; }
 }
 @media (max-width: 600px) {
     .wl-form-row { grid-template-columns: 1fr; }
@@ -923,18 +953,6 @@
     .wl-features-secondary-item { padding: 28px 20px; }
 }
 
-/* ── Additional responsive rules ── */
-@media (max-width: 900px) {
-    .wl-nav { padding: 0 20px; }
-    .wl-nav-actions { display: none; }
-    .wl-hero { padding: 100px 20px 60px; }
-    .wl-hero-inner { gap: 40px; }
-    .wl-section-inner { padding: 0 20px; }
-    .wl-count-strip { padding: 16px 20px; }
-    .wl-features { padding: 72px 20px; }
-    .wl-features-secondary { grid-template-columns: repeat(2, 1fr); }
-    .wl-features-secondary-item { border-right: none; border-bottom: 1px solid var(--border); }
-}
 
 @media (max-width: 600px) {
     .wl-nav { padding: 0 16px; }

@@ -31,6 +31,10 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.INTEGER,
             defaultValue: 0,
         },
+        subjects: {
+            type: DataTypes.TEXT,
+            allowNull: true,
+        },
     });
 
     return WaitlistEntries;

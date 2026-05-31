@@ -47,6 +47,15 @@ server/seed.js
 Past_Papers/
 _alumni/
 
+# ── Uploaded documents & extracted figures (RAG ingestion — 2.5 GB) ──
+server/uploads/
+
+# ── Generated diagram images (regenerate from .mmd source) ──
+docs/diagrams/*.png
+
+# ── RAG evaluation results (generated test outputs) ──
+server/scripts/eval-data/results/
+
 # ── One-off tooling ──
 fetch_file_paths.py
 file-paths.txt

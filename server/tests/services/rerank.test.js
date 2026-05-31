@@ -165,3 +165,110 @@ describe('rerank — cohere error paths', () => {
     expect(result).toBe(CHUNKS);
   });
 });
+
+// ── rerank — openai path ───────────────────────────────────────────────────────
+
+describe('rerank — openai provider', () => {
+  // Helper: reset modules, install openai mock, then load rerank with PROVIDER=openai
+  const loadWithOpenAIMock = (mockFn) => {
+    jest.resetModules();
+    jest.doMock('../../services/openai', () => ({ chatCompletion: mockFn }));
+    process.env.RAG_RERANK_PROVIDER = 'openai';
+    return require('../../services/rerank');
+  };
+
+  afterEach(() => {
+    jest.dontMock('../../services/openai');
+  });
+
+  it('reorders chunks according to scores returned by chatCompletion', async () => {
+    const mockChat = jest.fn().mockResolvedValue({
+      // scores: chunk 0 = 0.2, chunk 1 = 0.9, chunk 2 = 0.5 → expected order: 1, 2, 0
+      content: '[0.2, 0.9, 0.5]',
+    });
+    const { rerank } = loadWithOpenAIMock(mockChat);
+
+    const result = await rerank('some query', CHUNKS, { topN: 3 });
+
+    expect(mockChat).toHaveBeenCalledTimes(1);
+    expect(result[0].sourceId).toBe(2);   // score 0.9
+    expect(result[0].rerankScore).toBeCloseTo(0.9);
+    expect(result[1].sourceId).toBe(3);   // score 0.5
+    expect(result[1].rerankScore).toBeCloseTo(0.5);
+    expect(result[2].sourceId).toBe(1);   // score 0.2
+    expect(result[2].rerankScore).toBeCloseTo(0.2);
+  });
+
+  it('slices output to topN after sorting', async () => {
+    const mockChat = jest.fn().mockResolvedValue({ content: '[0.1, 0.8, 0.5]' });
+    const { rerank } = loadWithOpenAIMock(mockChat);
+
+    const result = await rerank('some query', CHUNKS, { topN: 2 });
+
+    expect(result).toHaveLength(2);
+    expect(result[0].sourceId).toBe(2);   // highest score 0.8
+    expect(result[1].sourceId).toBe(3);   // second 0.5
+  });
+
+  it('falls back to input when chatCompletion throws', async () => {
+    const mockChat = jest.fn().mockRejectedValue(new Error('API timeout'));
+    const { rerank } = loadWithOpenAIMock(mockChat);
+
+    const result = await rerank('some query', CHUNKS, { topN: 3 });
+
+    expect(result).toBe(CHUNKS);
+  });
+
+  it('falls back to input when chatCompletion returns invalid JSON', async () => {
+    const mockChat = jest.fn().mockResolvedValue({ content: 'not json at all' });
+    const { rerank } = loadWithOpenAIMock(mockChat);
+
+    const result = await rerank('some query', CHUNKS, { topN: 3 });
+
+    expect(result).toBe(CHUNKS);
+  });
+
+  it('falls back to input when chatCompletion returns a non-array JSON value', async () => {
+    const mockChat = jest.fn().mockResolvedValue({ content: '{"scores": [0.1, 0.2]}' });
+    const { rerank } = loadWithOpenAIMock(mockChat);
+
+    const result = await rerank('some query', CHUNKS, { topN: 3 });
+
+    expect(result).toBe(CHUNKS);
+  });
+});
+
+// ── rerank — edge cases ────────────────────────────────────────────────────────
+
+describe('rerank — edge cases', () => {
+  it('returns empty array immediately for empty chunks input', async () => {
+    process.env.RAG_RERANK_PROVIDER = 'cohere';
+    process.env.COHERE_API_KEY = 'test-key';
+    const { rerank } = load();
+
+    const result = await rerank('some query', []);
+    expect(result).toEqual([]);
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  it('returns all chunks when topN exceeds chunks length (cohere)', async () => {
+    process.env.RAG_RERANK_PROVIDER = 'cohere';
+    process.env.COHERE_API_KEY = 'test-key';
+    const { rerank } = load();
+
+    // Cohere returns exactly 3 results even though topN=10
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        results: [
+          { index: 0, relevance_score: 0.9 },
+          { index: 1, relevance_score: 0.7 },
+          { index: 2, relevance_score: 0.5 },
+        ],
+      }),
+    });
+
+    const result = await rerank('some query', CHUNKS, { topN: 10 });
+    expect(result).toHaveLength(3);
+  });
+});

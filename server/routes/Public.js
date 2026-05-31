@@ -36,15 +36,26 @@ const sendWaitlistConfirmation = async (entry, position, clientUrl) => {
     const html = `
         <div style="font-family:sans-serif;max-width:560px;margin:0 auto;color:#1a1a2e">
             <h2 style="margin-bottom:4px">You're on the list, ${entry.name}.</h2>
-            <p style="color:#555;margin-top:0">You're <strong>#${position.toLocaleString()}</strong> in line for Ibex early access.</p>
+            <p style="color:#555;margin-top:0">You're <strong>#${position.toLocaleString()}</strong> in line for early access.</p>
+
+            <div style="background:#f7f6ff;border-left:3px solid #6c63ff;padding:14px 18px;margin:24px 0;border-radius:0 8px 8px 0">
+                <p style="margin:0 0 6px;font-weight:600;color:#1a1a2e">What happens next</p>
+                <ul style="margin:0;padding-left:18px;color:#555;line-height:1.8;font-size:14px">
+                    <li>We'll email you the moment your access is ready</li>
+                    <li>Refer friends to move up the list and earn credits</li>
+                    <li>Try the AI right now — no account needed</li>
+                </ul>
+            </div>
+
+            <a href="${clientUrl}/#try-ai" style="display:inline-block;margin:0 0 24px;padding:12px 24px;background:#1a1a2e;color:#fff;border-radius:8px;text-decoration:none;font-weight:600">Try Ibex AI now →</a>
+
             <hr style="border:none;border-top:1px solid #eee;margin:24px 0"/>
             <h3 style="margin-bottom:8px">Move up the list — invite a friend</h3>
-            <p style="color:#555">Every friend who joins the waitlist earns you <strong>${WAITLIST_CREDITS_PER_REFERRAL} credits</strong>. When they create an account at launch, you get <strong>100 bonus XP</strong> on top.</p>
-            <p style="color:#555;margin-bottom:4px">Your referral code: <strong style="font-family:monospace;font-size:15px;letter-spacing:1px">${entry.referralCode}</strong></p>
-            <a href="${referralLink}" style="display:inline-block;margin:12px 0;padding:12px 24px;background:#6c63ff;color:#fff;border-radius:8px;text-decoration:none;font-weight:600">Share your referral link</a>
-            <p style="font-size:13px;color:#888;word-break:break-all">Or copy: ${referralLink}</p>
+            <p style="color:#555">Every friend who joins earns you <strong>${WAITLIST_CREDITS_PER_REFERRAL} credits</strong>. Refer 3 for 75 credits, 10 for 300 credits.</p>
+            <a href="${referralLink}" style="display:inline-block;margin:12px 0;padding:12px 24px;background:#6c63ff;color:#fff;border-radius:8px;text-decoration:none;font-weight:600">Share your referral link →</a>
+
             <hr style="border:none;border-top:1px solid #eee;margin:24px 0"/>
-            <p style="font-size:13px;color:#aaa">We'll email you as soon as your access is ready.</p>
+            <p style="font-size:13px;color:#aaa">You're receiving this because you joined the Ibex waitlist.</p>
         </div>
     `;
 
@@ -52,7 +63,7 @@ const sendWaitlistConfirmation = async (entry, position, clientUrl) => {
         await transporter.sendMail({
             from: process.env.SMTP_FROM || process.env.SMTP_USER,
             to: entry.email,
-            subject: `You're #${position} on the Ibex waitlist`,
+            subject: `[Ibex] You're on the Waitlist!`,
             html,
         }).catch(err => console.error('[Email] Waitlist confirmation failed:', err));
     } else {
@@ -260,6 +271,25 @@ router.get('/waitlist/ref/:code', async (req, res) => {
     } catch (err) {
         console.error('Waitlist ref stats error:', err);
         res.status(500).json({ error: 'Failed to fetch referral stats.' });
+    }
+});
+
+router.put('/waitlist/subjects', async (req, res) => {
+    try {
+        const { referralCode, subjects } = req.body || {};
+        if (!referralCode || !Array.isArray(subjects)) {
+            return res.status(400).json({ error: 'Invalid request.' });
+        }
+        const VALID = ['Economics', 'Biology', 'Chemistry', 'Physics', 'Mathematics', 'Other'];
+        const clean = subjects.filter(s => VALID.includes(s));
+        await WaitlistEntries.update(
+            { subjects: JSON.stringify(clean) },
+            { where: { referralCode } }
+        );
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Waitlist subjects error:', err);
+        res.status(500).json({ error: 'Failed to save subjects.' });
     }
 });
 

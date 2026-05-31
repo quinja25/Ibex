@@ -50,6 +50,7 @@ jest.mock('../../models', () => {
         findAll: jest.fn().mockResolvedValue([]),
         create: jest.fn().mockResolvedValue({ id: 1, role: 'user', content: 'hi', tokens: 5 }),
         destroy: jest.fn().mockResolvedValue(1),
+        count: jest.fn().mockResolvedValue(0),
     };
     const mockGroups = {
         findByPk: jest.fn(),
@@ -65,8 +66,9 @@ jest.mock('../../models', () => {
     const mockUserDocuments = {
         findAll: jest.fn().mockResolvedValue([]),
         findOne: jest.fn(),
-        create: jest.fn(),
+        create: jest.fn().mockResolvedValue({ id: 1 }),
         destroy: jest.fn(),
+        count: jest.fn().mockResolvedValue(0),
     };
     const mockGroups_Users = {
         findOne: jest.fn(),

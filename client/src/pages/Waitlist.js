@@ -27,6 +27,7 @@ const COUNTRIES = [
     'Venezuela','Vietnam','Yemen','Zambia','Zimbabwe',
 ];
 
+const EMAIL_DOMAINS = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'icloud.com', 'proton.me', 'naver.com', 'kakao.com'];
 
 const PRIMARY_FEATURES = [
     {
@@ -246,6 +247,71 @@ function RoomMockup() {
     );
 }
 
+function ReferralBox({ refStats, referralLink, copied, handleCopy, shareOnX, shareOnWhatsApp }) {
+    return (
+        <div className="wl-referral-box">
+            <div className="wl-referral-headline">
+                <span className="wl-referral-icon" aria-hidden="true">🎁</span>
+                <div>
+                    <p className="wl-referral-title">Move up the list. Earn rewards.</p>
+                    <p className="wl-referral-sub">Every friend who joins earns you <strong>25 credits</strong> — stacks automatically.</p>
+                </div>
+            </div>
+
+            {/* Progress bar */}
+            <div className="wl-referral-progress-wrap">
+                <div className="wl-referral-progress-bar">
+                    <div
+                        className="wl-referral-progress-fill"
+                        style={{ width: `${Math.min((refStats.referralCount / 10) * 100, 100)}%` }}
+                    />
+                </div>
+                <p className="wl-referral-progress-label">
+                    {refStats.referralCount === 0
+                        ? 'Refer 1 friend to start earning credits'
+                        : refStats.referralCount < 10
+                        ? `${refStats.referralCount}/10 friends referred · ${10 - refStats.referralCount} more for 300 credits`
+                        : `${refStats.referralCount} friends referred 🎉 300 credits unlocked`}
+                </p>
+            </div>
+
+            {/* Milestones */}
+            <div className="wl-referral-milestones">
+                <div className={`wl-referral-milestone${refStats.referralCount >= 1 ? ' wl-referral-milestone--done' : ''}`}>
+                    <span className="wl-milestone-check">{refStats.referralCount >= 1 ? '✓' : '○'}</span>
+                    <span>1 friend → 25 credits</span>
+                </div>
+                <div className={`wl-referral-milestone${refStats.referralCount >= 3 ? ' wl-referral-milestone--done' : ''}`}>
+                    <span className="wl-milestone-check">{refStats.referralCount >= 3 ? '✓' : '○'}</span>
+                    <span>3 friends → 75 credits</span>
+                </div>
+                <div className={`wl-referral-milestone${refStats.referralCount >= 10 ? ' wl-referral-milestone--done' : ''}`}>
+                    <span className="wl-milestone-check">{refStats.referralCount >= 10 ? '✓' : '○'}</span>
+                    <span>10 friends → 300 credits</span>
+                </div>
+            </div>
+
+            {/* Referral link */}
+            <div className="wl-referral-link-row">
+                <span className="wl-referral-link-text">{referralLink}</span>
+                <button className="wl-referral-copy" onClick={handleCopy} aria-label="Copy referral link">
+                    {copied ? '✓ Copied' : 'Copy link'}
+                </button>
+            </div>
+
+            {/* Share buttons */}
+            <div className="wl-share-row">
+                <button className="wl-share-btn wl-share-x" onClick={shareOnX} aria-label="Share on X">Share on X</button>
+                <button className="wl-share-btn wl-share-wa" onClick={shareOnWhatsApp} aria-label="Share on WhatsApp">WhatsApp</button>
+            </div>
+
+            {refStats.referralCount > 0 && (
+                <p className="wl-referral-stats">{refStats.referralCount} friend{refStats.referralCount !== 1 ? 's' : ''} referred · {refStats.waitlistCredits} credits earned</p>
+            )}
+        </div>
+    );
+}
+
 export const Waitlist = () => {
     useScrollReveal();
     const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -263,6 +329,8 @@ export const Waitlist = () => {
     const [countries, setCountries]       = useState([]);
     const [copied, setCopied]             = useState(false);
     const [hasUrlRef, setHasUrlRef]       = useState(false);
+    const [position, setPosition]         = useState(0);
+    const [selectedSubjects, setSelectedSubjects] = useState([]);
     const [emailError, setEmailError]     = useState('');
     const [nameError, setNameError]       = useState('');
     const [countryError, setCountryError] = useState('');
@@ -306,7 +374,6 @@ export const Waitlist = () => {
         return '';
     };
 
-    const EMAIL_DOMAINS = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'icloud.com', 'proton.me', 'naver.com', 'kakao.com'];
 
     const validateEmail = (val) => {
         if (!val.trim()) return 'Email is required.';
@@ -360,6 +427,7 @@ export const Waitlist = () => {
             localStorage.removeItem(DRAFT_KEY);
             setDraftBanner(null);
             setCount(data.count || count + 1);
+            setPosition(data.count || count + 1);
             if (data.referralCode) {
                 setReferralCode(data.referralCode);
                 window.gtag?.('event', 'waitlist_signup', { referred_by: referredBy || null, position: data.count });
@@ -375,6 +443,22 @@ export const Waitlist = () => {
             setErrorMsg('Network error. Please try again.');
             setStatus('error');
         }
+    };
+
+    const SUBJECTS = ['Economics', 'Biology', 'Chemistry', 'Physics', 'Mathematics', 'Other'];
+
+    const handleSubjectToggle = (subject) => {
+        const updated = selectedSubjects.includes(subject)
+            ? selectedSubjects.filter(s => s !== subject)
+            : [...selectedSubjects, subject];
+        setSelectedSubjects(updated);
+        if (!referralCode) return;
+        const apiBase = process.env.REACT_APP_API_URL || '';
+        fetch(`${apiBase}/public/waitlist/subjects`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ referralCode, subjects: updated }),
+        }).catch(() => {});
     };
 
     const referralLink = referralCode ? `${window.location.origin}/?ref=${referralCode}` : '';
@@ -484,69 +568,33 @@ export const Waitlist = () => {
                                 <div className="wl-success-mark" aria-hidden="true">✓</div>
                                 <h3>You're in{name ? `, ${name.split(' ')[0]}` : ''}.</h3>
                                 <p>We'll email you the moment access opens — no need to check back.</p>
-                                {referralLink && (
-                                    <div className="wl-referral-box">
-                                        <div className="wl-referral-headline">
-                                            <span className="wl-referral-icon" aria-hidden="true">🎁</span>
-                                            <div>
-                                                <p className="wl-referral-title">Move up the list. Earn rewards.</p>
-                                                <p className="wl-referral-sub">Every friend who joins earns you <strong>25 credits</strong> + <strong>100 XP</strong> at launch — credited automatically.</p>
-                                            </div>
-                                        </div>
-
-                                        {/* Progress bar */}
-                                        {refStats.referralCount >= 0 && (
-                                            <div className="wl-referral-progress-wrap">
-                                                <div className="wl-referral-progress-bar">
-                                                    <div
-                                                        className="wl-referral-progress-fill"
-                                                        style={{ width: `${Math.min((refStats.referralCount / 5) * 100, 100)}%` }}
-                                                    />
-                                                </div>
-                                                <p className="wl-referral-progress-label">
-                                                    {refStats.referralCount === 0
-                                                        ? 'Refer 1 friend to unlock early access priority'
-                                                        : refStats.referralCount < 5
-                                                        ? `${refStats.referralCount}/5 friends referred · ${5 - refStats.referralCount} more for Pro trial`
-                                                        : `${refStats.referralCount} friends referred 🎉 Pro trial unlocked`}
-                                                </p>
-                                            </div>
-                                        )}
-
-                                        {/* Milestones */}
-                                        <div className="wl-referral-milestones">
-                                            <div className={`wl-referral-milestone${refStats.referralCount >= 1 ? ' wl-referral-milestone--done' : ''}`}>
-                                                <span className="wl-milestone-check">{refStats.referralCount >= 1 ? '✓' : '○'}</span>
-                                                <span>1 friend → early access priority</span>
-                                            </div>
-                                            <div className={`wl-referral-milestone${refStats.referralCount >= 3 ? ' wl-referral-milestone--done' : ''}`}>
-                                                <span className="wl-milestone-check">{refStats.referralCount >= 3 ? '✓' : '○'}</span>
-                                                <span>3 friends → 75 credits + priority access</span>
-                                            </div>
-                                            <div className={`wl-referral-milestone${refStats.referralCount >= 5 ? ' wl-referral-milestone--done' : ''}`}>
-                                                <span className="wl-milestone-check">{refStats.referralCount >= 5 ? '✓' : '○'}</span>
-                                                <span>5 friends → 125 credits + 1 month Pro at launch</span>
-                                            </div>
-                                        </div>
-
-                                        {/* Referral link */}
-                                        <div className="wl-referral-link-row">
-                                            <span className="wl-referral-link-text">{referralLink}</span>
-                                            <button className="wl-referral-copy" onClick={handleCopy} aria-label="Copy referral link">
-                                                {copied ? '✓ Copied' : 'Copy link'}
-                                            </button>
-                                        </div>
-
-                                        {/* Share buttons */}
-                                        <div className="wl-share-row">
-                                            <button className="wl-share-btn wl-share-x" onClick={shareOnX} aria-label="Share on X">Share on X</button>
-                                            <button className="wl-share-btn wl-share-wa" onClick={shareOnWhatsApp} aria-label="Share on WhatsApp">WhatsApp</button>
-                                        </div>
-
-                                        {refStats.referralCount > 0 && (
-                                            <p className="wl-referral-stats">{refStats.referralCount} friend{refStats.referralCount !== 1 ? 's' : ''} referred · {refStats.waitlistCredits} credits earned</p>
-                                        )}
+                                <div className="wl-subject-select">
+                                    <p className="wl-subject-label">What are you studying?</p>
+                                    <div className="wl-subject-chips">
+                                        {SUBJECTS.map(s => (
+                                            <button
+                                                key={s}
+                                                className={`wl-subject-chip${selectedSubjects.includes(s) ? ' wl-subject-chip--active' : ''}`}
+                                                onClick={() => handleSubjectToggle(s)}
+                                                type="button"
+                                            >{s}</button>
+                                        ))}
                                     </div>
+                                    {selectedSubjects.length > 0 && (
+                                        <a href="#try-ai" className="wl-subject-cta">
+                                            Try Ibex AI for {selectedSubjects[selectedSubjects.length - 1]} →
+                                        </a>
+                                    )}
+                                </div>
+                                {referralLink && (
+                                    <ReferralBox
+                                        refStats={refStats}
+                                        referralLink={referralLink}
+                                        copied={copied}
+                                        handleCopy={handleCopy}
+                                        shareOnX={shareOnX}
+                                        shareOnWhatsApp={shareOnWhatsApp}
+                                    />
                                 )}
                                 <a href="#try-ai" className="wl-btn-primary wl-btn-full" style={{ marginTop: '1rem' }}>
                                     Ask Ibex while you wait →
@@ -558,68 +606,14 @@ export const Waitlist = () => {
                                 <h3>Already registered.</h3>
                                 <p>You're already on the waitlist. We'll let you know when access opens.</p>
                                 {referralLink && (
-                                    <div className="wl-referral-box">
-                                        <div className="wl-referral-headline">
-                                            <span className="wl-referral-icon" aria-hidden="true">🎁</span>
-                                            <div>
-                                                <p className="wl-referral-title">Move up the list. Earn rewards.</p>
-                                                <p className="wl-referral-sub">Every friend who joins earns you <strong>25 credits</strong> + <strong>100 XP</strong> at launch — credited automatically.</p>
-                                            </div>
-                                        </div>
-
-                                        {/* Progress bar */}
-                                        {refStats.referralCount >= 0 && (
-                                            <div className="wl-referral-progress-wrap">
-                                                <div className="wl-referral-progress-bar">
-                                                    <div
-                                                        className="wl-referral-progress-fill"
-                                                        style={{ width: `${Math.min((refStats.referralCount / 5) * 100, 100)}%` }}
-                                                    />
-                                                </div>
-                                                <p className="wl-referral-progress-label">
-                                                    {refStats.referralCount === 0
-                                                        ? 'Refer 1 friend to unlock early access priority'
-                                                        : refStats.referralCount < 5
-                                                        ? `${refStats.referralCount}/5 friends referred · ${5 - refStats.referralCount} more for Pro trial`
-                                                        : `${refStats.referralCount} friends referred 🎉 Pro trial unlocked`}
-                                                </p>
-                                            </div>
-                                        )}
-
-                                        {/* Milestones */}
-                                        <div className="wl-referral-milestones">
-                                            <div className={`wl-referral-milestone${refStats.referralCount >= 1 ? ' wl-referral-milestone--done' : ''}`}>
-                                                <span className="wl-milestone-check">{refStats.referralCount >= 1 ? '✓' : '○'}</span>
-                                                <span>1 friend → early access priority</span>
-                                            </div>
-                                            <div className={`wl-referral-milestone${refStats.referralCount >= 3 ? ' wl-referral-milestone--done' : ''}`}>
-                                                <span className="wl-milestone-check">{refStats.referralCount >= 3 ? '✓' : '○'}</span>
-                                                <span>3 friends → 75 credits + priority access</span>
-                                            </div>
-                                            <div className={`wl-referral-milestone${refStats.referralCount >= 5 ? ' wl-referral-milestone--done' : ''}`}>
-                                                <span className="wl-milestone-check">{refStats.referralCount >= 5 ? '✓' : '○'}</span>
-                                                <span>5 friends → 125 credits + 1 month Pro at launch</span>
-                                            </div>
-                                        </div>
-
-                                        {/* Referral link */}
-                                        <div className="wl-referral-link-row">
-                                            <span className="wl-referral-link-text">{referralLink}</span>
-                                            <button className="wl-referral-copy" onClick={handleCopy} aria-label="Copy referral link">
-                                                {copied ? '✓ Copied' : 'Copy link'}
-                                            </button>
-                                        </div>
-
-                                        {/* Share buttons */}
-                                        <div className="wl-share-row">
-                                            <button className="wl-share-btn wl-share-x" onClick={shareOnX} aria-label="Share on X">Share on X</button>
-                                            <button className="wl-share-btn wl-share-wa" onClick={shareOnWhatsApp} aria-label="Share on WhatsApp">WhatsApp</button>
-                                        </div>
-
-                                        {refStats.referralCount > 0 && (
-                                            <p className="wl-referral-stats">{refStats.referralCount} friend{refStats.referralCount !== 1 ? 's' : ''} referred · {refStats.waitlistCredits} credits earned</p>
-                                        )}
-                                    </div>
+                                    <ReferralBox
+                                        refStats={refStats}
+                                        referralLink={referralLink}
+                                        copied={copied}
+                                        handleCopy={handleCopy}
+                                        shareOnX={shareOnX}
+                                        shareOnWhatsApp={shareOnWhatsApp}
+                                    />
                                 )}
                                 <a href="#try-ai" className="wl-btn-primary wl-btn-full">
                                     Ask Ibex now
@@ -826,6 +820,7 @@ export const Waitlist = () => {
                                 <div key={q} className={`wl-faq-item${isOpen ? ' wl-faq-item--open' : ''}`}>
                                     <button
                                         className="wl-faq-q"
+                                        id={`faq-btn-${i}`}
                                         onClick={() => setOpenFaq(isOpen ? null : i)}
                                         aria-expanded={isOpen}
                                         aria-controls={`faq-answer-${i}`}
