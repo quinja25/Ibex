@@ -34,7 +34,8 @@ const IB_PROMPT_ADDON =
     `To what extent (balanced argument with a conclusion).\n` +
     `- Structure answers to match mark allocations (1 mark = 1 distinct point).\n` +
     `- Reference HL vs SL depth where relevant.\n` +
-    `- Cite uploaded textbooks or past papers when they appear in the knowledge base.`;
+    `- Cite uploaded textbooks or past papers when they appear in the knowledge base.\n` +
+    `- Write all math in plain text (e.g. K = 1/(1-MPC)) — do not use LaTeX delimiters like \\[...\\] or \\(...\\).`;
 
 const DAILY_TOKEN_LIMIT = parseInt(process.env.AI_DAILY_TOKEN_LIMIT || '50000', 10);
 const FREE_DAILY_QUERY_LIMIT = 10;
@@ -214,6 +215,24 @@ router.post('/chat', validateToken, async (req, res) => {
             tokens: 0,
         });
 
+        // TOCTOU guard: re-count after insert so concurrent requests that passed the
+        // pre-check don't each get a free query over the limit.
+        if (!user.isPro) {
+            const startOfToday = new Date();
+            startOfToday.setHours(0, 0, 0, 0);
+            const countAfterInsert = await AiMessages.count({
+                where: { userId, role: 'user', createdAt: { [Op.gte]: startOfToday } },
+            });
+            if (countAfterInsert > FREE_DAILY_QUERY_LIMIT) {
+                await userMsg.destroy();
+                return res.status(429).json({
+                    error: 'Daily AI limit reached. Upgrade to Pro for unlimited queries.',
+                    rateLimited: true,
+                    upgradeUrl: '/billing',
+                });
+            }
+        }
+
         const assistantMsg = await AiMessages.create({
             groupId,
             userId,
@@ -223,13 +242,9 @@ router.post('/chat', validateToken, async (req, res) => {
         });
 
         // 7. Atomically update daily credits.
-        // Using a SQL-level increment avoids a race condition where two concurrent requests
-        // both read the same stale value, increment it locally, then overwrite each other.
-        await Users.update(
-            { aiCreditsUsed: db.sequelize.literal(`aiCreditsUsed + ${aiResponse.tokens}`) },
-            { where: { id: userId } }
-        );
-        const estimatedCreditsUsed = user.aiCreditsUsed + aiResponse.tokens;
+        const tokens = Math.max(0, parseInt(aiResponse.tokens, 10) || 0);
+        await user.increment('aiCreditsUsed', { by: tokens });
+        const estimatedCreditsUsed = user.aiCreditsUsed + tokens;
 
         res.json({
             userMessage: userMsg,
@@ -369,16 +384,14 @@ router.post('/quiz', validateToken, async (req, res) => {
         });
 
         // Atomic credit update — same pattern as /ai/chat
-        await Users.update(
-            { aiCreditsUsed: db.sequelize.literal(`aiCreditsUsed + ${aiResponse.tokens}`) },
-            { where: { id: userId } }
-        );
+        const tokens = Math.max(0, parseInt(aiResponse.tokens, 10) || 0);
+        await user.increment('aiCreditsUsed', { by: tokens });
 
         res.json({
             quiz,
             userMessage: userMsg,
             assistantMessage: assistantMsg,
-            creditsUsed: user.aiCreditsUsed + aiResponse.tokens,
+            creditsUsed: user.aiCreditsUsed + tokens,
             creditsLimit: DAILY_TOKEN_LIMIT,
         });
     } catch (error) {
@@ -396,6 +409,9 @@ router.post('/quiz', validateToken, async (req, res) => {
 router.get('/history/:groupId', validateToken, async (req, res) => {
     try {
         const { groupId } = req.params;
+        const JoinTable = db.Groups_Users || db.UserGroup;
+        const membership = await JoinTable.findOne({ where: { UserId: req.user.id, GroupId: groupId } });
+        if (!membership) return res.status(403).json({ error: 'Not a member of this group' });
         const messages = await AiMessages.findAll({
             where: { groupId },
             order: [['createdAt', 'ASC']],
@@ -414,6 +430,9 @@ router.get('/history/:groupId', validateToken, async (req, res) => {
 router.delete('/history/:groupId', validateToken, async (req, res) => {
     try {
         const { groupId } = req.params;
+        const JoinTable = db.Groups_Users || db.UserGroup;
+        const membership = await JoinTable.findOne({ where: { UserId: req.user.id, GroupId: groupId } });
+        if (!membership) return res.status(403).json({ error: 'Not a member of this group' });
         await AiMessages.destroy({ where: { groupId } });
         res.json({ message: 'AI history cleared' });
     } catch (error) {
@@ -555,17 +574,18 @@ router.post('/ask', validateToken, async (req, res) => {
         }
 
         // Last 10 turns of conversation history sent from client
+        // Only allow 'user' and 'assistant' roles to prevent system prompt injection
         if (Array.isArray(history)) {
-            openaiMessages.push(...history.slice(-10).map(m => ({ role: m.role, content: m.content })));
+            openaiMessages.push(...history.slice(-10)
+                .filter(m => m.role === 'user' || m.role === 'assistant')
+                .map(m => ({ role: m.role, content: String(m.content || '') })));
         }
         openaiMessages.push({ role: 'user', content: message });
 
         const aiResponse = await chatCompletion(openaiMessages);
 
-        await Users.update(
-            { aiCreditsUsed: db.sequelize.literal(`aiCreditsUsed + ${aiResponse.tokens}`) },
-            { where: { id: userId } }
-        );
+        const tokens = Math.max(0, parseInt(aiResponse.tokens, 10) || 0);
+        await user.increment('aiCreditsUsed', { by: tokens });
 
         res.json({
             answer: aiResponse.content,
@@ -575,7 +595,7 @@ router.post('/ask', validateToken, async (req, res) => {
                 sourceId: c.sourceId,
                 preview: c.content.slice(0, 220),
             })),
-            creditsUsed: user.aiCreditsUsed + aiResponse.tokens,
+            creditsUsed: user.aiCreditsUsed + tokens,
             creditsLimit: DAILY_TOKEN_LIMIT,
         });
     } catch (error) {
@@ -703,6 +723,7 @@ router.delete('/documents/:id', validateToken, async (req, res) => {
 // POST /ai/reindex — Re-index all content for vector search
 // ──────────────────────────────────────────────
 router.post('/reindex', validateToken, async (req, res) => {
+    if (!req.user.isAdmin) return res.status(403).json({ error: 'Admin only' });
     try {
         // Start reindexing in the background — don't block the response
         res.json({ message: 'Reindexing started. This may take a few minutes.' });

@@ -6,9 +6,35 @@ const { rerank } = require('./rerank');
 const { generateHypotheticalAnswer } = require('./hyde');
 const { classifyQuery } = require('./queryIntent');
 const { expandKeywords, augmentQueryForEmbedding } = require('./synonyms');
+const { sourcePerformance } = require('./feedbackAggregates');
+
+let _perfCache = null;
+let _perfCacheAt = 0;
+const PERF_TTL_MS = 5 * 60 * 1000;
+
+async function getSourcePerf() {
+    if (_perfCache && Date.now() - _perfCacheAt < PERF_TTL_MS) return _perfCache;
+    try {
+        const rows = await sourcePerformance();
+        const map = {};
+        for (const row of rows) {
+            const total = row.upCount + row.downCount;
+            if (total === 0) continue;
+            map[`${row.source}:${row.sourceId}`] = { ctr: row.upCount / total };
+        }
+        _perfCache = map;
+        _perfCacheAt = Date.now();
+    } catch {
+        _perfCache = _perfCache || {};
+    }
+    return _perfCache;
+}
 
 const MAX_CHUNKS = parseInt(process.env.RAG_MAX_CHUNKS || '5', 10);
 const MAX_CHUNK_CHARS = 1200; // ~400 tokens (~3 chars per token)
+
+// Escape special LIKE wildcard characters to prevent unintended pattern matching
+const escapeLike = (s) => s.replace(/[%_\\]/g, '\\$&');
 const RERANK_CANDIDATES = parseInt(process.env.RAG_RERANK_CANDIDATES || '20', 10);
 
 // Query preprocessing: strip stop words, punctuation, and short words to improve search relevance
@@ -89,8 +115,8 @@ async function searchWiki(_query, keywords, options = {}) {
                 where: {
                     [Op.or]: keywords.map(kw => ({
                         [Op.or]: [
-                            { title: { [Op.like]: `%${kw}%` } },
-                            { content: { [Op.like]: `%${kw}%` } },
+                            { title: { [Op.like]: `%${escapeLike(kw)}%` } },
+                            { content: { [Op.like]: `%${escapeLike(kw)}%` } },
                         ]
                     })),
                 },
@@ -178,8 +204,8 @@ async function searchQA(_query, keywords, options = {}) {
                 where: {
                     [Op.or]: keywords.map(kw => ({
                         [Op.or]: [
-                            { title: { [Op.like]: `%${kw}%` } },
-                            { body: { [Op.like]: `%${kw}%` } },
+                            { title: { [Op.like]: `%${escapeLike(kw)}%` } },
+                            { body: { [Op.like]: `%${escapeLike(kw)}%` } },
                         ]
                     })),
                 },
@@ -258,8 +284,8 @@ async function searchPosts(_query, keywords, options = {}) {
                 where: {
                     [Op.or]: keywords.map(kw => ({
                         [Op.or]: [
-                            { title: { [Op.like]: `%${kw}%` } },
-                            { content: { [Op.like]: `%${kw}%` } },
+                            { title: { [Op.like]: `%${escapeLike(kw)}%` } },
+                            { content: { [Op.like]: `%${escapeLike(kw)}%` } },
                         ]
                     })),
                 },
@@ -317,8 +343,8 @@ async function searchResources(_query, keywords, options = {}) {
                 where: {
                     [Op.or]: keywords.map(kw => ({
                         [Op.or]: [
-                            { title: { [Op.like]: `%${kw}%` } },
-                            { description: { [Op.like]: `%${kw}%` } },
+                            { title: { [Op.like]: `%${escapeLike(kw)}%` } },
+                            { description: { [Op.like]: `%${escapeLike(kw)}%` } },
                         ]
                     })),
                 },
@@ -363,7 +389,7 @@ function normalizeScore(rawRelevance, row, options = {}) {
 
     // Subject match bonus
     if (options.subject && row.subject &&
-        row.subject.toLowerCase().includes(options.subject.toLowerCase())) {
+        row.subject.toLowerCase().trim() === options.subject.toLowerCase().trim()) {
         score += 0.3;
     }
 
@@ -506,7 +532,11 @@ async function retrieveContext(query, options = {}) {
         const key = `${result.source}:${result.sourceId}`;
         const increment = 1 / (RRF_K + rank + 1);
         if (rrfScores.has(key)) {
-            rrfScores.get(key).rrfScore += increment;
+            const existing = rrfScores.get(key);
+            existing.rrfScore += increment;
+            if (result.content && result.content.length > (existing.content || '').length) {
+                existing.content = result.content;
+            }
         } else {
             rrfScores.set(key, { ...result, rrfScore: increment });
         }
@@ -516,7 +546,11 @@ async function retrieveContext(query, options = {}) {
         const key = `${result.source}:${result.sourceId}`;
         const increment = 1 / (RRF_K + rank + 1);
         if (rrfScores.has(key)) {
-            rrfScores.get(key).rrfScore += increment;
+            const existing = rrfScores.get(key);
+            existing.rrfScore += increment;
+            if (result.content && result.content.length > (existing.content || '').length) {
+                existing.content = result.content;
+            }
         } else {
             rrfScores.set(key, { ...result, rrfScore: increment });
         }
@@ -550,6 +584,18 @@ async function retrieveContext(query, options = {}) {
     if (options.subject) {
         for (const r of results) {
             if (r.source === 'global_document') r.rrfScore += 0.05;
+        }
+    }
+
+    // Feedback-driven boost: nudge rrfScore by historical CTR per source document.
+    // Delta = (ctr - 0.5) * 0.1 → max ±0.05. Falls back gracefully on error or empty data.
+    const perfData = await getSourcePerf();
+    if (perfData && Object.keys(perfData).length > 0) {
+        for (const r of results) {
+            const perf = perfData[`${r.source}:${r.sourceId}`];
+            if (perf && typeof perf.ctr === 'number') {
+                r.rrfScore += (perf.ctr - 0.5) * 0.1;
+            }
         }
     }
 

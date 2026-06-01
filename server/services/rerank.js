@@ -60,7 +60,7 @@ async function rerankCohere(query, chunks, topN) {
 }
 
 // Ollama lacks a true cross-encoder; we embed query + each chunk and rank by cosine sim.
-async function rerankOllama(query, chunks) {
+async function rerankOllama(query, chunks, topN) {
   const embed = async (input) => {
     let res;
     try {
@@ -86,18 +86,17 @@ async function rerankOllama(query, chunks) {
     return chunks;
   }
 
-  const scored = [];
-  for (const chunk of chunks) {
+  const scored = await Promise.all(chunks.map(async (chunk) => {
     try {
       const vec = await embed(chunk.content);
-      scored.push({ ...chunk, rerankScore: cosine(queryVec, vec) });
+      return { ...chunk, rerankScore: cosine(queryVec, vec) };
     } catch (err) {
       console.error('[rerank] ollama chunk embed error:', err.message);
-      return chunks;
+      return { ...chunk, rerankScore: 0 };
     }
-  }
-
-  return scored.sort((a, b) => b.rerankScore - a.rerankScore);
+  }));
+  const sorted = scored.sort((a, b) => b.rerankScore - a.rerankScore);
+  return topN ? sorted.slice(0, topN) : sorted;
 }
 
 /**
@@ -124,7 +123,8 @@ ${passages.join('\n\n')}`;
       [{ role: 'user', content: prompt }],
       { temperature: 0, max_tokens: 200 }
     );
-    scores = JSON.parse(result.content.trim());
+    const raw = result.content.trim().replace(/^```[a-z]*\n?/, '').replace(/```$/, '').trim();
+    scores = JSON.parse(raw);
     if (!Array.isArray(scores)) throw new Error('not an array');
   } catch (err) {
     console.error('[rerank] openai parse error:', err.message);
@@ -144,7 +144,7 @@ async function rerank(query, chunks, options = {}) {
   const topN = options.topN || chunks.length;
 
   if (PROVIDER === 'cohere') return rerankCohere(query, chunks, topN);
-  if (PROVIDER === 'ollama') return rerankOllama(query, chunks);
+  if (PROVIDER === 'ollama') return rerankOllama(query, chunks, topN);
   if (PROVIDER === 'openai') return rerankOpenAI(query, chunks, topN);
 
   return chunks;

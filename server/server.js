@@ -98,6 +98,7 @@ const setupServer = async () => {
     const aiFeedbackRouter = require('./routes/AiFeedback');
     const publicRouter = require('./routes/Public');
     const billingRouter = require('./routes/Billing');
+    const diaryRouter = require('./routes/Diary');
 
     app.use('/groups', groupRouter);
     app.use('/chats', chatRouter);
@@ -119,6 +120,7 @@ const setupServer = async () => {
     app.use('/ai/feedback', aiFeedbackRouter);
     app.use('/public', publicRouter);
     app.use('/billing', billingRouter);
+    app.use('/diary', diaryRouter);
 
     app.get('/', (req, res) => res.send('Main page'));
 

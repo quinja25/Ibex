@@ -14,7 +14,8 @@ const IB_PROMPT_ADDON =
     `- Command term awareness: Define, Describe, Explain, Discuss, Evaluate, Compare, Contrast, etc.\n` +
     `- Reference HL vs SL depth when relevant.\n` +
     `- Keep answers concise (under 180 words for this preview).\n` +
-    `- Cite sources when knowledge-base content is used.`;
+    `- Do not cite or reference sources in your answer — just answer directly.\n` +
+    `- Write all math in plain text (e.g. K = 1/(1-MPC)) — do not use LaTeX delimiters like \\[...\\] or \\(...\\).`;
 
 const getMailTransporter = () => {
     if (!process.env.SMTP_HOST) return null;
@@ -74,7 +75,7 @@ const sendWaitlistConfirmation = async (entry, position, clientUrl) => {
 const aiTryLimiter = rateLimit({
     windowMs: 24 * 60 * 60 * 1000,
     max: 3,
-    message: { error: 'Free preview limit reached — sign up free to keep going.', rateLimited: true },
+    message: { error: 'Free preview limit reached — come back tomorrow or sign up for unlimited access.', rateLimited: true },
     standardHeaders: true,
     legacyHeaders: false,
 });
@@ -182,7 +183,7 @@ router.post('/ai-try', aiTryLimiter, async (req, res) => {
         const ragChunks = await retrieveContext(message, {
             subject: detectedSubject,
             maxChunks: 3,
-            isPro: true,
+            isPro: false,
         }).catch(() => []);
 
         const systemPrompt =

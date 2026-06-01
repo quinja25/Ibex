@@ -216,10 +216,12 @@ async function getContentText(sourceType, sourceId) {
             });
             if (!r) return {};
             // Only index title + description, never paid content
+            const rSubject = r.subject || null;
+            const rSubjectLine = rSubject ? `Subject: ${rSubject}\n` : '';
             return {
                 text: `${r.title}\n\n${r.description || ''}`,
-                prefix: `Resource (${r.type})\nBy: ${r.author?.name || 'Unknown'}`,
-                subject: null,
+                prefix: `${rSubjectLine}Resource (${r.type})\nBy: ${r.author?.name || 'Unknown'}`,
+                subject: rSubject,
                 record: { title: r.title, description: r.description || '', content: '' },
             };
         }
@@ -228,10 +230,12 @@ async function getContentText(sourceType, sourceId) {
                 include: [{ model: Users, as: 'author', attributes: ['name'] }],
             });
             if (!p) return {};
+            const pSubject = p.subject || null;
+            const pSubjectLine = pSubject ? `Subject: ${pSubject}\n` : '';
             return {
                 text: p.content,
-                prefix: `${p.type === 'advice' ? 'Advice' : 'Blog'}: ${p.title}\nBy: ${p.author?.name || 'Unknown'}`,
-                subject: null,
+                prefix: `${pSubjectLine}${p.type === 'advice' ? 'Advice' : 'Blog'}: ${p.title}\nBy: ${p.author?.name || 'Unknown'}`,
+                subject: pSubject,
                 record: { title: p.title, content: p.content },
             };
         }

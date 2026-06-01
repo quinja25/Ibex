@@ -1,0 +1,172 @@
+.review-page {
+    min-height: 100vh;
+    background: #f5f6fa;
+}
+
+.review-container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 40px 20px;
+}
+
+.review-loading,
+.review-error {
+    text-align: center;
+    color: #666;
+    font-size: 1rem;
+    margin-top: 60px;
+}
+
+.review-error {
+    color: #e74c3c;
+}
+
+/* Progress */
+.review-progress {
+    font-size: 0.85rem;
+    color: #888;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.review-progress-bar {
+    height: 6px;
+    background: #e0e0e0;
+    border-radius: 3px;
+    margin-top: 8px;
+    overflow: hidden;
+}
+
+.review-progress-fill {
+    height: 100%;
+    background: #5c6bc0;
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+/* Card */
+.review-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 40px 32px;
+    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.08);
+    text-align: center;
+}
+
+.review-card-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #aaa;
+    margin: 0 0 12px;
+}
+
+.review-card-topic {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin: 0 0 32px;
+    line-height: 1.3;
+}
+
+/* Buttons */
+.review-btn-primary {
+    background: #5c6bc0;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 32px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.review-btn-primary:hover {
+    background: #3f51b5;
+}
+
+.review-btn-secondary {
+    background: transparent;
+    color: #5c6bc0;
+    border: 2px solid #5c6bc0;
+    border-radius: 8px;
+    padding: 10px 24px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 16px;
+    transition: all 0.2s;
+}
+
+.review-btn-secondary:hover {
+    background: #5c6bc0;
+    color: #fff;
+}
+
+/* Answer section */
+.review-answer-section {
+    margin-top: 8px;
+}
+
+.review-answer-prompt {
+    font-size: 0.9rem;
+    color: #666;
+    margin: 0 0 16px;
+}
+
+.review-rating-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.review-rating-btn {
+    border: none;
+    border-radius: 8px;
+    padding: 10px 18px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+    color: #fff;
+}
+
+.review-rating-btn:hover {
+    opacity: 0.88;
+    transform: translateY(-1px);
+}
+
+.review-rating-forgot { background: #e74c3c; }
+.review-rating-hard   { background: #e67e22; }
+.review-rating-good   { background: #27ae60; }
+.review-rating-easy   { background: #2980b9; }
+
+/* Done card */
+.review-done-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 60px 32px;
+    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.08);
+    text-align: center;
+}
+
+.review-done-icon {
+    font-size: 3rem;
+    color: #27ae60;
+    margin-bottom: 16px;
+}
+
+.review-done-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin: 0 0 12px;
+}
+
+.review-done-sub {
+    font-size: 0.95rem;
+    color: #888;
+    margin: 0;
+}

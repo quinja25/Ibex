@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import Logo from '../Logo1.svg';
@@ -381,9 +381,10 @@ export const Waitlist = () => {
     };
 
     const localPart = email.includes('@') ? email.split('@')[0] : email;
-    const emailSuggestions = localPart.length > 0
-        ? EMAIL_DOMAINS.map(d => `${localPart}@${d}`)
-        : [];
+    const emailSuggestions = useMemo(
+        () => localPart.length > 0 ? EMAIL_DOMAINS.map(d => `${localPart}@${d}`) : [],
+        [localPart]
+    );
 
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
@@ -560,7 +561,7 @@ export const Waitlist = () => {
                     </div>
 
                     {/* ── Signup card ── */}
-                    <div className="wl-card wl-reveal" data-delay="180">
+                    <div id="signup" className="wl-card wl-reveal" data-delay="180">
                         {status === 'success' ? (
                             <div className="wl-success" role="status">
                                 <div className="wl-success-mark" aria-hidden="true">✓</div>
@@ -730,17 +731,6 @@ export const Waitlist = () => {
                 </div>
             </section>
 
-            {/* ── Signup count strip ── */}
-            {count > 0 && (
-                <div className="wl-stats-wrap">
-                    <div className="wl-count-strip">
-                        <div className="wl-count-strip-item">
-                            <span className="wl-count-strip-val"><CountUp target={count} /></span>
-                            <span className="wl-count-strip-label">students on the waitlist</span>
-                        </div>
-                    </div>
-                </div>
-            )}
 
             {/* ── Country strip ── */}
             {countries.length > 0 && (
@@ -748,7 +738,7 @@ export const Waitlist = () => {
                     <span className="wl-countries-label">Students from</span>
                     <div className="wl-countries-list">
                         {countries.map(({ country: c, count: n }) => (
-                            <span key={c} className="wl-country-chip">{c} <span className="wl-country-count">{n}</span></span>
+                            <span key={c} className="wl-country-chip">{c}</span>
                         ))}
                     </div>
                 </div>

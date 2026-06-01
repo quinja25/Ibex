@@ -162,6 +162,8 @@ function _dot(a, b) {
 //   RAG_IVF_MIN_ROWS  (default 500)  — rows needed before building IVF
 //   RAG_IVF_NPROBE    (default 0)    — clusters to probe; 0 = auto (15% of k, min 3)
 
+let _cacheGeneration = 0;
+
 const _cache = {
     // All deserialized, unit-normalized embedding vectors.
     entries: [],   // { sourceType, sourceId, chunkIndex, chunkText, subject, userId, vec: Float32Array }
@@ -183,6 +185,7 @@ function invalidateVectorIndex() {
     _cache.ivf = null;
     _cache.stale = true;
     _cache.loading = null;
+    _cacheGeneration++;
 }
 
 /**
@@ -216,7 +219,8 @@ async function _loadCache() {
 
         // Kick off IVF build asynchronously — brute-force is used in the meantime.
         if (_cache.entries.length >= IVF_MIN_ROWS) {
-            setImmediate(_buildIVFAsync);
+            const buildGen = _cacheGeneration;
+            setImmediate(() => _buildIVFAsync(buildGen));
         }
     })();
 
@@ -236,7 +240,7 @@ async function _loadCache() {
  *
  * Query time after build: O(k + nprobe × n/k) ≈ O(√n) vs O(n) brute-force.
  */
-function _buildIVFAsync() {
+function _buildIVFAsync(buildGen) {
     const entries = _cache.entries;
     if (entries.length < IVF_MIN_ROWS) return;
 
@@ -292,6 +296,8 @@ function _buildIVFAsync() {
             // Done: build the cells array (centroid → list of entry indices).
             const cells = Array.from({ length: k }, () => []);
             for (let i = 0; i < n; i++) cells[assignments[i]].push(i);
+            // Discard result if cache was invalidated mid-build (stale cell indices).
+            if (_cacheGeneration !== buildGen) return;
             _cache.ivf = { centroids, cells };
         }
     }

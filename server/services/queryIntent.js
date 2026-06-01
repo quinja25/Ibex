@@ -75,22 +75,29 @@ async function llmClassify(query) {
  * @returns {Promise<{ intent: string, boosts: Record<string, number>, confidence: number }>}
  */
 async function classifyQuery(query, options = {}) {
-    void options; // reserved for future use
+    const { subject } = options;
     const mode = process.env.RAG_INTENT_MODE || 'heuristic';
 
     if (mode === 'off') {
         return { intent: 'general', boosts: {}, confidence: 0 };
     }
 
+    let result;
     if (mode === 'llm') {
         try {
-            return await llmClassify(query);
+            result = await llmClassify(query);
         } catch (_) {
-            return heuristicClassify(query);
+            result = heuristicClassify(query);
         }
+    } else {
+        result = heuristicClassify(query);
     }
 
-    return heuristicClassify(query);
+    if (subject) {
+        result.subjectBoost = { subject: subject.toLowerCase(), delta: 0.1 };
+    }
+
+    return result;
 }
 
 module.exports = { classifyQuery };

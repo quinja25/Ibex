@@ -27,6 +27,7 @@ import { ResetPassword } from './pages/ResetPassword';
 import VerifyEmail from './pages/VerifyEmail';
 import { AiChat } from './pages/AiChat';
 import { BillingSuccess } from './pages/BillingSuccess';
+import { Review } from './pages/Review';
 import { NotFound } from './pages/NotFound';
 
 // Redirect to /login if not authenticated
@@ -87,6 +88,7 @@ export const App = () => {
         <Route path="/marketplace" element={<ProtectedRoute><Marketplace /></ProtectedRoute>} />
         <Route path="/ai-chat" element={<ProtectedRoute><AiChat /></ProtectedRoute>} />
         <Route path="/billing/success" element={<ProtectedRoute><BillingSuccess /></ProtectedRoute>} />
+        <Route path="/review" element={<ProtectedRoute><Review /></ProtectedRoute>} />
 
         {/* Admin-only route */}
         <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
