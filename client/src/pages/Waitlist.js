@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import Logo from '../Logo1.svg';
@@ -132,24 +132,6 @@ const useScrollReveal = () => {
     }, []);
 };
 
-const CountUp = ({ target }) => {
-    const [count, setCount] = useState(0);
-    const ref = useRef(null);
-    useEffect(() => {
-        if (target <= 0) return;
-        const duration = 1200;
-        const steps = 40;
-        const increment = target / steps;
-        let current = 0;
-        const timer = setInterval(() => {
-            current = Math.min(current + increment, target);
-            setCount(Math.floor(current));
-            if (current >= target) clearInterval(timer);
-        }, duration / steps);
-        return () => clearInterval(timer);
-    }, [target]);
-    return <span ref={ref}>{count.toLocaleString()}</span>;
-};
 
 function AiMockup() {
     return (
@@ -247,7 +229,7 @@ function RoomMockup() {
     );
 }
 
-function ReferralBox({ refStats, referralLink, copied, handleCopy, shareOnX, shareOnWhatsApp }) {
+function ReferralBox({ refStats, referralLink, referralCode, copied, handleCopy, copiedCode, handleCopyCode, shareOnX, shareOnWhatsApp, shareOnFacebook, shareOnTelegram, shareOnLine, shareOnKakao }) {
     return (
         <div className="wl-referral-box">
             <div className="wl-referral-headline">
@@ -299,10 +281,23 @@ function ReferralBox({ refStats, referralLink, copied, handleCopy, shareOnX, sha
                 </button>
             </div>
 
+            {/* Referral code */}
+            <div className="wl-referral-code-row">
+                <span className="wl-referral-code-label">Or share your code:</span>
+                <span className="wl-referral-code">{referralCode.toUpperCase()}</span>
+                <button className="wl-referral-copy" onClick={handleCopyCode} aria-label="Copy referral code">
+                    {copiedCode ? '✓ Copied' : 'Copy code'}
+                </button>
+            </div>
+
             {/* Share buttons */}
             <div className="wl-share-row">
-                <button className="wl-share-btn wl-share-x" onClick={shareOnX} aria-label="Share on X">Share on X</button>
+                <button className="wl-share-btn wl-share-x" onClick={shareOnX} aria-label="Share on X">X</button>
                 <button className="wl-share-btn wl-share-wa" onClick={shareOnWhatsApp} aria-label="Share on WhatsApp">WhatsApp</button>
+                <button className="wl-share-btn wl-share-fb" onClick={shareOnFacebook} aria-label="Share on Facebook">Facebook</button>
+                <button className="wl-share-btn wl-share-tg" onClick={shareOnTelegram} aria-label="Share on Telegram">Telegram</button>
+                <button className="wl-share-btn wl-share-line" onClick={shareOnLine} aria-label="Share on Line">Line</button>
+                <button className="wl-share-btn wl-share-kakao" onClick={shareOnKakao} aria-label="Share on KakaoTalk">KakaoTalk</button>
             </div>
 
             {refStats.referralCount > 0 && (
@@ -328,6 +323,7 @@ export const Waitlist = () => {
     const [refStats, setRefStats]         = useState({ referralCount: 0, waitlistCredits: 0 });
     const [countries, setCountries]       = useState([]);
     const [copied, setCopied]             = useState(false);
+    const [copiedCode, setCopiedCode]     = useState(false);
     const [hasUrlRef, setHasUrlRef]       = useState(false);
     const [selectedSubjects, setSelectedSubjects] = useState([]);
     const [emailError, setEmailError]     = useState('');
@@ -444,12 +440,11 @@ export const Waitlist = () => {
         }
     };
 
-    const SUBJECTS = ['Economics', 'Biology', 'Chemistry', 'Physics', 'Mathematics', 'Other'];
+    const SUBJECTS = ['Economics', 'Biology', 'Chemistry', 'Physics', 'Mathematics'];
+    const LIVE_SUBJECTS = new Set(['Economics', 'Biology', 'Chemistry']);
 
     const handleSubjectToggle = (subject) => {
-        const updated = selectedSubjects.includes(subject)
-            ? selectedSubjects.filter(s => s !== subject)
-            : [...selectedSubjects, subject];
+        const updated = selectedSubjects.includes(subject) ? [] : [subject];
         setSelectedSubjects(updated);
         if (!referralCode) return;
         const apiBase = process.env.REACT_APP_API_URL || '';
@@ -470,6 +465,14 @@ export const Waitlist = () => {
         });
     };
 
+    const handleCopyCode = () => {
+        if (!referralCode) return;
+        navigator.clipboard.writeText(referralCode.toUpperCase()).then(() => {
+            setCopiedCode(true);
+            setTimeout(() => setCopiedCode(false), 2000);
+        });
+    };
+
     const shareOnX = () => {
         const text = encodeURIComponent(`Just joined the Ibex waitlist — AI built end-to-end for IB students 🎓 Join me:`);
         window.open(`https://x.com/intent/tweet?text=${text}&url=${encodeURIComponent(referralLink)}`, '_blank', 'noopener');
@@ -479,6 +482,45 @@ export const Waitlist = () => {
         const text = encodeURIComponent(`I just joined Ibex — AI built for IB students. Join me: ${referralLink}`);
         window.open(`https://wa.me/?text=${text}`, '_blank', 'noopener');
     };
+
+    const shareOnFacebook = () => {
+        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(referralLink)}`, '_blank', 'noopener');
+    };
+
+    const shareOnTelegram = () => {
+        const text = encodeURIComponent(`I just joined Ibex — AI built for IB students. Join me:`);
+        window.open(`https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${text}`, '_blank', 'noopener');
+    };
+
+    const shareOnLine = () => {
+        const text = encodeURIComponent(`I just joined Ibex — AI built for IB students. Join me: ${referralLink}`);
+        window.open(`https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(referralLink)}&text=${text}`, '_blank', 'noopener');
+    };
+
+    const shareOnKakao = () => {
+        const kakao = window.Kakao;
+        if (!kakao || !kakao.isInitialized()) return;
+        kakao.Share.sendDefault({
+            objectType: 'feed',
+            content: {
+                title: 'Ibex — AI built for IB students',
+                description: 'Join the waitlist for early access to the IB-specialized AI tutor.',
+                link: { mobileWebUrl: referralLink, webUrl: referralLink },
+            },
+            buttons: [{ title: 'Join waitlist', link: { mobileWebUrl: referralLink, webUrl: referralLink } }],
+        });
+    };
+
+    // Load Kakao SDK once referral code is available
+    useEffect(() => {
+        if (!referralCode) return;
+        const appKey = process.env.REACT_APP_KAKAO_APP_KEY;
+        if (!appKey || window.Kakao) return;
+        const script = document.createElement('script');
+        script.src = 'https://developers.kakao.com/sdk/js/kakao.min.js';
+        script.onload = () => { window.Kakao.init(appKey); };
+        document.head.appendChild(script);
+    }, [referralCode]);
 
     const title = 'Ibex — Early Access · IB Study Platform';
     const desc  = 'The only AI study platform built end-to-end for IB. Join the waitlist for early access.';
@@ -551,13 +593,6 @@ export const Waitlist = () => {
                             your exact exams.
                         </p>
 
-                        {count > 0 && (
-                            <p className="wl-count-line wl-reveal" data-delay="340">
-                                <span className="wl-count-arrow" aria-hidden="true">→</span>
-                                <strong><CountUp target={count} /></strong>
-                                <span>students already on the list</span>
-                            </p>
-                        )}
                     </div>
 
                     {/* ── Signup card ── */}
@@ -573,26 +608,36 @@ export const Waitlist = () => {
                                         {SUBJECTS.map(s => (
                                             <button
                                                 key={s}
-                                                className={`wl-subject-chip${selectedSubjects.includes(s) ? ' wl-subject-chip--active' : ''}`}
+                                                className={`wl-subject-chip${selectedSubjects.includes(s) ? ' wl-subject-chip--active' : ''}${!LIVE_SUBJECTS.has(s) ? ' wl-subject-chip--soon' : ''}`}
                                                 onClick={() => handleSubjectToggle(s)}
                                                 type="button"
-                                            >{s}</button>
+                                            >
+                                                {s}
+                                                {!LIVE_SUBJECTS.has(s) && <span className="wl-subject-soon-badge">soon</span>}
+                                            </button>
                                         ))}
                                     </div>
                                     {selectedSubjects.length > 0 && (
-                                        <a href="#try-ai" className="wl-subject-cta">
-                                            Try Ibex AI for {selectedSubjects[selectedSubjects.length - 1]} →
-                                        </a>
+                                        LIVE_SUBJECTS.has(selectedSubjects[0])
+                                            ? <a href="#try-ai" className="wl-subject-cta">Try Ibex AI for {selectedSubjects[0]} →</a>
+                                            : <p className="wl-subject-cta wl-subject-cta--soon">{selectedSubjects[0]} support is on its way — you'll be first to know.</p>
                                     )}
                                 </div>
                                 {referralLink && (
                                     <ReferralBox
                                         refStats={refStats}
                                         referralLink={referralLink}
+                                        referralCode={referralCode}
                                         copied={copied}
                                         handleCopy={handleCopy}
+                                        copiedCode={copiedCode}
+                                        handleCopyCode={handleCopyCode}
                                         shareOnX={shareOnX}
                                         shareOnWhatsApp={shareOnWhatsApp}
+                                        shareOnFacebook={shareOnFacebook}
+                                        shareOnTelegram={shareOnTelegram}
+                                        shareOnLine={shareOnLine}
+                                        shareOnKakao={shareOnKakao}
                                     />
                                 )}
                                 <a href="#try-ai" className="wl-btn-primary wl-btn-full" style={{ marginTop: '1rem' }}>
@@ -608,10 +653,17 @@ export const Waitlist = () => {
                                     <ReferralBox
                                         refStats={refStats}
                                         referralLink={referralLink}
+                                        referralCode={referralCode}
                                         copied={copied}
                                         handleCopy={handleCopy}
+                                        copiedCode={copiedCode}
+                                        handleCopyCode={handleCopyCode}
                                         shareOnX={shareOnX}
                                         shareOnWhatsApp={shareOnWhatsApp}
+                                        shareOnFacebook={shareOnFacebook}
+                                        shareOnTelegram={shareOnTelegram}
+                                        shareOnLine={shareOnLine}
+                                        shareOnKakao={shareOnKakao}
                                     />
                                 )}
                                 <a href="#try-ai" className="wl-btn-primary wl-btn-full">

@@ -30,24 +30,6 @@ const SUBJECTS = [
             'How do you calculate pH for a weak acid buffer?',
         ],
     },
-    {
-        label: 'Physics',
-        emoji: '⚡',
-        samples: [
-            'Explain the photoelectric effect and Einstein\'s equation.',
-            'What is the difference between nuclear fission and fusion?',
-            'Derive the equations of uniform circular motion.',
-        ],
-    },
-    {
-        label: 'Maths',
-        emoji: '∫',
-        samples: [
-            'Explain the chain rule with an IB Maths AA HL example.',
-            'What is the binomial theorem and when do you use it?',
-            'How do you find the area between two curves using integration?',
-        ],
-    },
 ];
 
 const MAX_CHARS = 200;

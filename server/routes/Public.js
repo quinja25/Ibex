@@ -33,11 +33,11 @@ const WAITLIST_CREDITS_PER_REFERRAL = 25;
 
 const sendWaitlistConfirmation = async (entry, position, clientUrl) => {
     const transporter = getMailTransporter();
+    const serverUrl = (process.env.SERVER_URL || 'http://localhost:3001').replace(/\/$/, '');
     const referralLink = `${clientUrl}/?ref=${entry.referralCode}`;
     const html = `
         <div style="font-family:sans-serif;max-width:560px;margin:0 auto;color:#1a1a2e">
             <h2 style="margin-bottom:4px">You're on the list, ${entry.name}.</h2>
-            <p style="color:#555;margin-top:0">You're <strong>#${position.toLocaleString()}</strong> in line for early access.</p>
 
             <div style="background:#f7f6ff;border-left:3px solid #6c63ff;padding:14px 18px;margin:24px 0;border-radius:0 8px 8px 0">
                 <p style="margin:0 0 6px;font-weight:600;color:#1a1a2e">What happens next</p>
@@ -54,6 +54,12 @@ const sendWaitlistConfirmation = async (entry, position, clientUrl) => {
             <h3 style="margin-bottom:8px">Move up the list — invite a friend</h3>
             <p style="color:#555">Every friend who joins earns you <strong>${WAITLIST_CREDITS_PER_REFERRAL} credits</strong>. Refer 3 for 75 credits, 10 for 300 credits.</p>
             <a href="${referralLink}" style="display:inline-block;margin:12px 0;padding:12px 24px;background:#6c63ff;color:#fff;border-radius:8px;text-decoration:none;font-weight:600">Share your referral link →</a>
+
+            <p style="color:#888;font-size:13px;margin:8px 0 0">Link not working? Share your code instead and ask them to enter it at signup:</p>
+            <div style="margin:8px 0 0;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                <span style="display:inline-block;padding:10px 20px;background:#f0eeff;border:1px dashed #6c63ff;border-radius:8px;font-family:monospace;font-size:18px;font-weight:700;letter-spacing:2px;color:#6c63ff">${entry.referralCode.toUpperCase()}</span>
+                <a href="${serverUrl}/public/copy-code?code=${entry.referralCode}" style="display:inline-block;padding:8px 16px;background:#6c63ff;color:#fff;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600">Copy code →</a>
+            </div>
 
             <hr style="border:none;border-top:1px solid #eee;margin:24px 0"/>
             <p style="font-size:13px;color:#aaa">You're receiving this because you joined the Ibex waitlist.</p>
@@ -226,6 +232,20 @@ router.post('/ai-try', aiTryLimiter, async (req, res) => {
         }
         res.status(500).json({ error: 'Failed to get answer. Please try again.' });
     }
+});
+
+router.get('/copy-code', (req, res) => {
+    const code = (req.query.code || '').replace(/[^a-f0-9]/gi, '').toUpperCase();
+    if (!code) return res.status(400).send('Invalid code.');
+    res.send(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Copy code</title></head><body style="font-family:sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#f7f6ff">
+<div style="text-align:center;padding:32px;background:#fff;border-radius:12px;box-shadow:0 2px 16px rgba(0,0,0,0.08);max-width:320px">
+<p style="color:#555;margin:0 0 12px;font-size:14px">Your referral code</p>
+<div id="code" style="font-family:monospace;font-size:28px;font-weight:700;letter-spacing:4px;color:#6c63ff;background:#f0eeff;border:1px dashed #6c63ff;border-radius:8px;padding:12px 24px;margin-bottom:16px">${code}</div>
+<button onclick="navigator.clipboard.writeText('${code}').then(()=>{this.textContent='✓ Copied!';this.style.background='#22c55e';})" style="padding:10px 24px;background:#6c63ff;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer">Copy code</button>
+<p style="color:#aaa;font-size:12px;margin:16px 0 0">Enter this code at signup on <a href="/" style="color:#6c63ff">ibex.study</a></p>
+</div>
+<script>navigator.clipboard.writeText('${code}').catch(()=>{});</script>
+</body></html>`);
 });
 
 router.get('/waitlist/count', async (req, res) => {
